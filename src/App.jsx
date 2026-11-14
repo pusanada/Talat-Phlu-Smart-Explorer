@@ -10,9 +10,10 @@ import AdminDashboard from './components/AdminDashboard'
 import GeminiAiModal from './components/GeminiAiModal'
 import { useTeam } from './hooks/useTeam'
 import { isSupabaseConfigured } from './lib/supabase'
-import { createShop, deleteShop, getShops, recordVote, updateShop } from './services/shopService'
+import { createShop, deleteShop, DEFAULT_SHOPS, getShops, recordVote, updateShop } from './services/shopService'
 import { createPost, getPosts } from './services/postService'
 import { getQuizQuestions } from './services/quizService'
+import { DEFAULT_QUIZ_QUESTIONS } from './constants/defaultQuestions'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('quiz')
@@ -34,10 +35,10 @@ export default function App() {
   }
 
   // ── Data State ───────────────────────────────────────────────
-  const [shops, setShops] = useState([])
+  const [shops, setShops] = useState(DEFAULT_SHOPS)
   const [posts, setPosts] = useState([])
-  const [questions, setQuestions] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [questions, setQuestions] = useState(DEFAULT_QUIZ_QUESTIONS)
+  const [loading, setLoading] = useState(false)
   const [votes, setVotes] = useState({}) // shopId -> 'like' | 'dislike' | null
   const [quizAnswers, setQuizAnswers] = useState(() => Array(5).fill(null))
   const [quizDone, setQuizDone] = useState(false)

@@ -1,11 +1,30 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
+export const DEFAULT_SHOPS = [
+  {
+    id: 'shop_01',
+    name: 'ร้านน้ำแข็งใส นิอ่าง (ระดับตำนาน)',
+    image: 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&w=600&q=80',
+    signature_menu: 'น้ำแข็งใสไข่แข็ง และ ไอติมไข่แข็ง เครื่องแน่น',
+    story:
+      'ตำนานร้านน้ำแข็งใสคู่ตลาดพลูที่เปิดบริการมายาวนานกว่า 50 ปี สืบทอดความอร่อยจากรุ่นสู่รุ่น แม้จะผ่านช่วงการก่อสร้างรถไฟฟ้า แต่ยังคงยืนหยัดรักษาเอกลักษณ์ความอร่อยหวานมันไว้ได้อย่างครบถ้วน',
+    map_link:
+      'https://www.google.com/maps/search/?api=1&query=%E0%B8%99%E0%B8%B4%E0%B8%AD%E0%B9%88%E0%B8%B2%E0%B8%87%20%E0%B8%99%E0%B9%89%E0%B8%B3%E0%B9%81%E0%B8%82%E0%B9%87%E0%B8%87%E0%B9%83%E0%B8%AA%20%E0%B9%84%E0%B8%AD%E0%B8%95%E0%B8%B4%E0%B8%A1%E0%B9%84%E0%B8%82%E0%B9%88%E0%B9%81%E0%B8%82%E0%B9%87%E0%B8%87%20%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%9E%E0%B8%A5%E0%B8%B9',
+    video: '/videos/talat-phlu-story.mp4',
+    video_duration: '2:05',
+    personas: ['sweet', 'chill', 'street', 'healthy'],
+    category: 'ของหวานโบราณ',
+    likes: 412,
+    dislikes: 18,
+  },
+]
+
 /**
- * Fetch all shops from Supabase
+ * Fetch all shops from Supabase (or fallback to default shop ร้านนิอ่าง)
  */
 export async function getShops() {
   if (!isSupabaseConfigured || !supabase) {
-    return []
+    return DEFAULT_SHOPS
   }
 
   try {
@@ -15,10 +34,11 @@ export async function getShops() {
       .order('likes', { ascending: false })
 
     if (error) throw error
-    return data || []
+    if (data && data.length > 0) return data
+    return DEFAULT_SHOPS
   } catch (err) {
-    console.error('Supabase getShops error:', err)
-    return []
+    console.warn('Supabase getShops fallback to default shop:', err)
+    return DEFAULT_SHOPS
   }
 }
 

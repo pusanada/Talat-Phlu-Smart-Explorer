@@ -1,11 +1,12 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
+import { DEFAULT_QUIZ_QUESTIONS } from '../constants/defaultQuestions'
 
 /**
- * Fetch quiz questions from Supabase
+ * Fetch quiz questions from Supabase, or use default Talat Phlu questions
  */
 export async function getQuizQuestions() {
   if (!isSupabaseConfigured || !supabase) {
-    return []
+    return DEFAULT_QUIZ_QUESTIONS
   }
 
   try {
@@ -15,9 +16,12 @@ export async function getQuizQuestions() {
       .order('sort_order', { ascending: true })
 
     if (error) throw error
-    return data || []
+    if (data && data.length > 0) {
+      return data
+    }
+    return DEFAULT_QUIZ_QUESTIONS
   } catch (err) {
-    console.error('Supabase getQuizQuestions error:', err)
-    return []
+    console.warn('Supabase getQuizQuestions fallback to default:', err)
+    return DEFAULT_QUIZ_QUESTIONS
   }
 }
