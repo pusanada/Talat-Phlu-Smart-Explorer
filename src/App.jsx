@@ -29,10 +29,13 @@ export default function App() {
   const openAuth = (mode = 'login') => setAuthModal({ open: true, mode })
   const closeAuth = () => setAuthModal({ open: false, mode: 'login' })
 
-  const handleLogin = (emailOrKeyword) => {
-    const found = login(emailOrKeyword)
-    if (found) setMember(found)
-    return found
+  const handleLogin = async (emailOrKeyword, password) => {
+    const res = await login(emailOrKeyword, password)
+    if (res?.ok && res.member) {
+      setMember(res.member)
+      return res
+    }
+    return res || { ok: false, error: 'เข้าสู่ระบบไม่สำเร็จ' }
   }
 
   // ── Data State ───────────────────────────────────────────────

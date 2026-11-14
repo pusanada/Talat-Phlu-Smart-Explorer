@@ -313,21 +313,35 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           </p>
 
           <div className="overflow-hidden rounded-[28px] bg-white p-3 shadow-bento border border-sand-100">
-            <div className="relative overflow-hidden rounded-[20px] bg-sand-100">
+            {/* Clickable Map Picture -> Directly opens Google Maps */}
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%9E%E0%B8%A5%E0%B8%B9"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="คลิกที่ภาพเพื่อเปิดแผนที่ตลาดพลูบน Google Maps"
+              className="group relative block overflow-hidden rounded-[20px] bg-sand-100 cursor-pointer"
+            >
               <img
                 src="/images/talat-phlu-map.jpg"
-                alt="แผนที่ภาพรวมย่านตลาดพลู"
+                alt="แผนที่ภาพรวมย่านตลาดพลู (คลิกเพื่อเปิด Google Maps)"
                 loading="lazy"
-                className="w-full object-contain transition-transform duration-300 hover:scale-[1.01]"
+                className="w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
               />
-            </div>
+
+              {/* Hover / Tap Overlay Prompt */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors flex items-center justify-center pointer-events-none">
+                <span className="opacity-0 group-hover:opacity-100 transition-opacity rounded-full bg-white/95 px-4 py-2 text-xs font-bold text-brown-900 shadow-bento-sm backdrop-blur flex items-center gap-1.5">
+                  <MapPin className="h-4 w-4 text-terracotta-500" /> แตะเพื่อเปิด Google Maps
+                </span>
+              </div>
+            </a>
 
             <div className="mt-3 flex flex-col sm:flex-row items-center justify-between gap-2.5 px-2 pb-1">
               <p className="text-xs font-semibold text-brown-600">
-                📍 นิอ่าง น้ำแข็งใส ไอติมไข่แข็ง ตลาดพลู เลียบทางรถไฟ
+                📍 ย่านตลาดพลู กรุงเทพมหานคร
               </p>
               <a
-                href="https://www.google.com/maps/search/?api=1&query=%E0%B8%99%E0%B8%B4%E0%B8%AD%E0%B9%88%E0%B8%B2%E0%B8%87%20%E0%B8%99%E0%B9%89%E0%B8%B3%E0%B9%81%E0%B8%82%E0%B9%87%E0%B8%87%E0%B9%83%E0%B8%AA%20%E0%B9%84%E0%B8%AD%E0%B8%95%E0%B8%B4%E0%B8%A1%E0%B9%84%E0%B8%82%E0%B9%88%E0%B9%81%E0%B8%82%E0%B9%87%E0%B8%87%20%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%9E%E0%B8%A5%E0%B8%B9"
+                href="https://www.google.com/maps/search/?api=1&query=%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%9E%E0%B8%A5%E0%B8%B9"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 rounded-full bg-terracotta-500 px-4 py-2 text-xs font-bold text-white shadow-bento-sm hover:bg-terracotta-600 transition"

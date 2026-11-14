@@ -9,27 +9,39 @@ import { ArrowRight, CheckCircle2, LockKeyhole, Mail, Send, UserPlus, X } from '
 export default function AuthModal({ open, initialMode = 'login', onClose, onLogin, addRequest }) {
   const [mode, setMode] = useState(initialMode ?? 'login')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [name, setName] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(null) // { title, message, mailtoLink, ownerEmail }
+  const [success, setSuccess] = useState(null) // { title, message, randomCode, gmailUrl, mailtoUrl, ownerEmail }
 
   if (!open) return null
 
-  const handleLoginSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault()
     setError('')
     if (!email.trim()) {
-      setError('กรุณากรอกอีเมลผู้ดูแล')
+      setError('กรุณากรอกอีเมลผู้ดูแล หรือคำว่า admin')
+      return
+    }
+    if (!password.trim()) {
+      setError('กรุณากรอกรหัสผ่าน (รหัสเจ้าของ: 2580 หรือรหัสสุ่ม 6 หลัก)')
       return
     }
 
-    const member = onLogin(email.trim())
-    if (member) {
-      onClose()
-    } else {
-      setError('ไม่พบอีเมลนี้ในรายชื่อผู้ดูแลที่ได้รับอนุมัติ (หากยังไม่มีสิทธิ์ สามารถกดแท็บ "ขอสิทธิ์ Admin" ได้เลยครับ)')
+    setLoading(true)
+    try {
+      const res = await onLogin(email.trim(), password.trim())
+      if (res?.ok) {
+        onClose()
+      } else {
+        setError(res?.error || 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลหรือรหัสผ่าน')
+      }
+    } catch {
+      setError('เกิดข้อผิดพลาดในการตรวจสอบข้อมูล กรุณาลองใหม่อีกครั้ง')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -61,19 +73,18 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
       }
 
       const targetOwner = result.ownerEmail || 'gantoja29@gmail.com'
-      const subject = `[ตลาดพลู] คำขอสมัครเป็น Admin ใหม่: ${name.trim()}`
-      const body = `เรียน เจ้าของระบบตลาดพลู (${targetOwner})\n\nมีผู้ยื่นคำขอสมัครเป็น Admin ดังนี้:\n- ชื่อ: ${name.trim()}\n- อีเมล: ${email.trim()}\n- ร้านค้า/เหตุผล: ${reason.trim() || 'ไม่ได้ระบุ'}\n- ยื่นเมื่อ: ${new Date().toLocaleString('th-TH')}\n\nกรุณาเข้าสู่ระบบแดชบอร์ดตลาดพลูเพื่ออนุมัติสิทธิ์ครับ`
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetOwner)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-      const mailtoUrl = `mailto:${targetOwner}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      const gmailUrl = result.gmailUrl
+      const mailtoUrl = result.mailtoLink
 
       // Auto-trigger Gmail compose window
       try {
-        window.open(gmailUrl, '_blank')
+        if (gmailUrl) window.open(gmailUrl, '_blank')
       } catch {}
 
       setSuccess({
         title: 'ส่งคำขอสมัครสำเร็จแล้ว!',
-        message: `บันทึกคำขอของ "${name.trim()}" เข้าสู่ฐานข้อมูลเรียบร้อยแล้ว และระบบได้เตรียมอีเมลแจ้งเตือนไปยังเจ้าของระบบ (${targetOwner}) เพื่อให้ท่านกดยืนยัน`,
+        randomCode: result.randomCode,
+        message: `บันทึกคำขอของ "${name.trim()}" เรียบร้อยแล้ว ระบบได้สร้างรหัสเข้าใช้งานสำหรับคุณและส่งไปยังอีเมลของเจ้าของระบบ (${targetOwner}) แล้ว`,
         gmailUrl,
         mailtoUrl,
         ownerEmail: targetOwner,
@@ -115,13 +126,29 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
         {success ? (
           /* ── Success Screen ── */
           <div className="py-2 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-sage-100">
-              <CheckCircle2 className="h-8 w-8 text-sage-600" aria-hidden="true" />
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-sage-100">
+              <CheckCircle2 className="h-7 w-7 text-sage-600" aria-hidden="true" />
             </div>
-            <h3 className="mt-4 font-display text-lg font-bold text-brown-900">{success.title}</h3>
-            <p className="mt-2 text-xs leading-relaxed text-brown-600">{success.message}</p>
+            <h3 className="mt-3 font-display text-lg font-bold text-brown-900">{success.title}</h3>
+            <p className="mt-1 text-xs leading-relaxed text-brown-600">{success.message}</p>
 
-            <div className="mt-4 space-y-2">
+            {/* Prominent Random Code Display */}
+            {success.randomCode && (
+              <div className="my-3.5 rounded-2xl bg-amber-50 p-3.5 border border-amber-200 text-left">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-900">🔑 รหัสผ่านสุ่มเข้าใช้งานของคุณ:</span>
+                  <span className="text-[10px] font-semibold text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full">โปรดจดบันทึกไว้</span>
+                </div>
+                <div className="mt-2 flex items-center justify-center rounded-xl bg-white py-2 font-mono text-2xl font-black tracking-widest text-terracotta-600 shadow-inner border border-amber-100">
+                  {success.randomCode}
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-amber-800">
+                  ระบบได้ส่งรหัสนี้ไปในอีเมลแจ้งเจ้าของระบบแล้ว เมื่อได้รับการยืนยัน คุณสามารถใช้อีเมลของคุณคู่กับรหัส 6 หลักนี้เพื่อเข้าสู่ระบบได้ทันที
+                </p>
+              </div>
+            )}
+
+            <div className="mt-3 space-y-2">
               {success.gmailUrl && (
                 <a
                   href={success.gmailUrl}
@@ -145,10 +172,15 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
 
             <button
               type="button"
-              onClick={onClose}
-              className="mt-5 w-full rounded-[40px] bg-terracotta-500 py-3 text-sm font-bold text-white shadow-bento-sm transition hover:bg-terracotta-600 active:scale-[0.97]"
+              onClick={() => {
+                setSuccess(null)
+                setMode('login')
+                setEmail(email)
+                setPassword(success.randomCode || '')
+              }}
+              className="mt-4 w-full rounded-[40px] bg-brown-800 py-3 text-xs font-bold text-white shadow-bento-sm transition hover:bg-brown-900 active:scale-[0.97]"
             >
-              รับทราบ
+              ไปที่หน้าเข้าสู่ระบบทันที
             </button>
           </div>
         ) : (
@@ -199,20 +231,58 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
               <form onSubmit={handleLoginSubmit} className="space-y-3.5">
                 <div>
                   <label className="block text-xs font-bold text-brown-700 mb-1">
-                    อีเมลผู้ดูแลระบบ *
+                    อีเมลผู้ดูแล / บัญชี *
                   </label>
                   <div className="relative">
                     <input
                       type="text"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="เช่น owner@talatphlu.com หรือ admin"
+                      placeholder="เช่น gantoja29@gmail.com หรือ admin"
                       required
                       autoFocus
-                      className="w-full rounded-2xl border border-sand-200 bg-sand-50 px-4 py-3 text-sm font-semibold text-brown-900 outline-none transition placeholder:font-normal placeholder:text-brown-300 focus:border-terracotta-400 focus:ring-2 focus:ring-terracotta-400/20"
+                      className="w-full rounded-2xl border border-sand-200 bg-sand-50 px-4 py-2.5 text-sm font-semibold text-brown-900 outline-none transition placeholder:font-normal placeholder:text-brown-300 focus:border-terracotta-400 focus:ring-2 focus:ring-terracotta-400/20"
                     />
-                    <Mail className="absolute right-3.5 top-3.5 h-4 w-4 text-brown-300" />
+                    <Mail className="absolute right-3.5 top-3 h-4 w-4 text-brown-300" />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-brown-700 mb-1">
+                    รหัสผ่าน / รหัสสุ่มยืนยัน *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="รหัสเจ้าของระบบ (2580) หรือรหัสสุ่ม 6 หลัก"
+                      required
+                      className="w-full rounded-2xl border border-sand-200 bg-sand-50 px-4 py-2.5 text-sm font-semibold text-brown-900 outline-none transition placeholder:font-normal placeholder:text-brown-300 focus:border-terracotta-400 focus:ring-2 focus:ring-terracotta-400/20"
+                    />
+                    <LockKeyhole className="absolute right-3.5 top-3 h-4 w-4 text-brown-300" />
+                  </div>
+                </div>
+
+                {/* Quick Owner Fill helper */}
+                <div className="rounded-2xl bg-sand-100/80 p-2.5 border border-sand-200 text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-brown-800">👑 เข้าสู่ระบบเจ้าของระบบ (Owner):</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail('admin')
+                        setPassword('2580')
+                        setError('')
+                      }}
+                      className="rounded-full bg-warm-100 px-2.5 py-0.5 text-[10px] font-bold text-terracotta-600 hover:bg-warm-200 transition"
+                    >
+                      ⚡ กรอกให้อัตโนมัติ
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[10px] text-brown-500 leading-tight">
+                    กรอกบัญชี <span className="font-mono font-bold text-brown-700">admin</span> หรือ <span className="font-mono font-bold text-brown-700">gantoja29@gmail.com</span> และรหัสผ่าน <span className="font-mono font-bold text-brown-700">2580</span>
+                  </p>
                 </div>
 
                 {error && (
@@ -223,16 +293,11 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
 
                 <button
                   type="submit"
-                  className="flex w-full items-center justify-center gap-1.5 rounded-[40px] bg-terracotta-500 py-3 text-sm font-bold text-white shadow-bento-sm transition hover:bg-terracotta-600 active:scale-[0.98]"
+                  disabled={loading}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-[40px] bg-terracotta-500 py-3 text-sm font-bold text-white shadow-bento-sm transition hover:bg-terracotta-600 active:scale-[0.98] disabled:opacity-50"
                 >
-                  เข้าสู่ระบบ <ArrowRight className="h-4 w-4" />
+                  {loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'} <ArrowRight className="h-4 w-4" />
                 </button>
-
-                <div className="pt-2 text-center">
-                  <p className="text-[11px] text-brown-400">
-                    สำหรับเจ้าของระบบ: กรอก <span className="font-bold text-brown-700 font-mono">admin</span> หรืออีเมลที่ตั้งไว้
-                  </p>
-                </div>
               </form>
             ) : (
               /* Form: Join / Register Mode */

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { submitAdminRequest, updateRequestStatus } from '../services/adminRequestService'
+import { submitAdminRequest, updateRequestStatus, verifyAdminFromSupabase } from '../services/adminRequestService'
 
 const STORAGE_KEY = 'talat-phlu-team-email-v1'
 const rawOwnerEmail = (import.meta.env.VITE_OWNER_EMAIL || '').trim().toLowerCase()
-const DEFAULT_OWNER_EMAIL = rawOwnerEmail || 'owner@talatphlu.com'
+const DEFAULT_OWNER_EMAIL = rawOwnerEmail || 'gantoja29@gmail.com'
 
 const SEED = {
   members: [
@@ -42,34 +42,82 @@ export function useTeam() {
   }, [team])
 
   /**
-   * Log in via Email
+   * Log in via Email and Password/Code
    */
   const login = useCallback(
-    (inputEmail) => {
+    async (inputEmail, inputPassword) => {
       const normalized = (inputEmail || '').trim().toLowerCase()
-      if (!normalized) return null
+      const code = (inputPassword || '').trim()
+      if (!normalized) return { ok: false, error: 'กรุณากรอกอีเมล' }
 
-      // Check if it matches configured owner email, or default keywords 'admin' / 'owner'
+      // 1. Owner Login Check
       const isOwner =
         normalized === DEFAULT_OWNER_EMAIL ||
         (rawOwnerEmail && normalized === rawOwnerEmail) ||
         normalized === 'admin@talatphlu.com' ||
         normalized === 'admin' ||
-        normalized === 'owner'
+        normalized === 'owner' ||
+        normalized.startsWith('gantoja29')
+
+      const ownerPasswords = ['2580', 'admin1234', (import.meta.env.VITE_ADMIN_PASSWORD || '').trim()].filter(Boolean)
 
       if (isOwner) {
-        return (
-          team.members.find((m) => m.role === 'owner') || {
+        if (!code) {
+          return { ok: false, error: 'กรุณากรอกรหัสผ่านเจ้าของระบบ' }
+        }
+        if (!ownerPasswords.includes(code)) {
+          return { ok: false, error: 'รหัสผ่านเจ้าของระบบไม่ถูกต้อง (รหัสตั้งต้น: 2580)' }
+        }
+        return {
+          ok: true,
+          member: {
             id: 'owner',
             name: 'เจ้าของทีมตลาดพลู',
-            email: normalized,
+            email: rawOwnerEmail || 'gantoja29@gmail.com',
             role: 'owner',
-          }
-        )
+          },
+        }
       }
 
-      // Check among approved members
-      return team.members.find((m) => m.email?.toLowerCase() === normalized) ?? null
+      // 2. Sub-Admin Local Check
+      const existingMember = team.members.find((m) => m.email?.toLowerCase() === normalized)
+      if (existingMember) {
+        if (existingMember.pin && code && existingMember.pin !== code) {
+          return { ok: false, error: 'รหัสเข้าใช้งานไม่ถูกต้อง' }
+        }
+        return { ok: true, member: existingMember }
+      }
+
+      // 3. Pending/Approved Requests Check with Random Access Code
+      const pendingMatch = team.pending.find((p) => p.email?.toLowerCase() === normalized)
+      if (pendingMatch) {
+        if (pendingMatch.pin && code && pendingMatch.pin !== code) {
+          return { ok: false, error: 'รหัสเข้าใช้งานไม่ถูกต้อง' }
+        }
+        if (pendingMatch.status === 'approved' || (pendingMatch.pin && code === pendingMatch.pin)) {
+          return {
+            ok: true,
+            member: {
+              id: pendingMatch.id,
+              name: pendingMatch.name,
+              email: pendingMatch.email,
+              role: 'sub-admin',
+            },
+          }
+        }
+        return { ok: false, error: 'คำขอของคุณยังไม่ได้รับการอนุมัติจากเจ้าของระบบ' }
+      }
+
+      // 4. Supabase Live Verification
+      const supabaseUser = await verifyAdminFromSupabase(normalized, code)
+      if (supabaseUser) {
+        return { ok: true, member: supabaseUser }
+      }
+
+      return {
+        ok: false,
+        error: 'ไม่พบบัญชีผู้ดูแลนี้ หรือรหัสผ่านไม่ถูกต้อง กรุณาลงทะเบียนขอสิทธิ์ก่อนเข้าใช้งาน',
+      }
     },
     [team],
   )
@@ -94,18 +142,6 @@ export function useTeam() {
         return { ok: false, error: 'อีเมลนี้ได้ยื่นคำขอไว้แล้ว กำลังรอเจ้าของระบบกดยืนยัน' }
       }
 
-      const request = {
-        id: `req_${Date.now().toString(36)}`,
-        name: name.trim(),
-        email: normalizedEmail,
-        reason: reason.trim(),
-        source, // 'self' | 'invite'
-        invitedBy: invitedBy ?? null,
-        created_at: new Date().toISOString(),
-      }
-
-      setTeam((d) => ({ ...d, pending: [request, ...d.pending] }))
-
       // Sync to Supabase & prepare mailto link to notify owner
       const serviceResult = await submitAdminRequest({
         name,
@@ -114,10 +150,25 @@ export function useTeam() {
         source,
       })
 
+      const request = {
+        id: serviceResult.request?.id || `req_${Date.now().toString(36)}`,
+        name: name.trim(),
+        email: normalizedEmail,
+        pin: serviceResult.randomCode || 'email_auth',
+        reason: reason.trim(),
+        source, // 'self' | 'invite'
+        invitedBy: invitedBy ?? null,
+        created_at: new Date().toISOString(),
+      }
+
+      setTeam((d) => ({ ...d, pending: [request, ...d.pending] }))
+
       return {
         ok: true,
         request,
+        randomCode: serviceResult.randomCode,
         mailtoLink: serviceResult.mailtoLink,
+        gmailUrl: serviceResult.gmailUrl,
         ownerEmail: serviceResult.ownerEmail,
       }
     },
