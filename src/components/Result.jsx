@@ -6,12 +6,12 @@ import GoogleMapView from './GoogleMapView'
 import Mascot from './Mascot'
 import { PERSONAS, computeTally, computePersona, getRecommendedShops } from '../constants/personas'
 
-// Radar axes: 4 persona scores (removed 'กินจุ')
+// Radar axes: Exactly matching PERSONAS keys and names
 const AXES = [
-  { key: 'sweet', label: 'หวานจัด', emoji: '🍰' },
-  { key: 'street', label: 'สายแซ่บ', emoji: '🍢' },
-  { key: 'chill', label: 'ชิล ๆ', emoji: '🧋' },
-  { key: 'healthy', label: 'เฮลตี้', emoji: '🥗' },
+  { key: 'sweet', label: PERSONAS.sweet.name, emoji: PERSONAS.sweet.emoji },
+  { key: 'street', label: PERSONAS.street.name, emoji: PERSONAS.street.emoji },
+  { key: 'chill', label: PERSONAS.chill.name, emoji: PERSONAS.chill.emoji },
+  { key: 'healthy', label: PERSONAS.healthy.name, emoji: PERSONAS.healthy.emoji },
 ]
 
 export default function Result({ answers, shops = [], onRestart, questions }) {
@@ -24,11 +24,20 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
   const [exporting, setExporting] = useState(false)
   const [toast, setToast] = useState('')
 
-  // Normalize tallies to 0–100 (max per key = 5 questions × 3 pts)
-  const stats = AXES.map((ax) => ({
-    ...ax,
-    value: Math.min(100, Math.round(((tally[ax.key] || 0) / 15) * 100)),
-  }))
+  // Normalize tallies to 0–100% (max per key = 5 questions × 3 pts = 15 pts)
+  const stats = AXES.map((ax) => {
+    const raw = tally[ax.key] || 0
+    const pct = Math.min(100, Math.round((raw / 15) * 100))
+    return {
+      ...ax,
+      rawScore: raw,
+      value: pct,
+      isWinner: ax.key === persona.key,
+    }
+  })
+
+  // Sort stats descending for the strength list so the winning persona is #1
+  const sortedStats = [...stats].sort((a, b) => b.value - a.value)
 
   const handleExportImage = async () => {
     if (!cardRef.current || exporting) return
@@ -196,27 +205,42 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             </div>
 
             <div className="rounded-[28px] bg-white p-5 shadow-bento flex flex-col justify-center">
-              <p className="mb-2 text-center font-display text-sm font-bold text-brown-900">📊 สเตตัสสายกิน 4 ด้าน</p>
+              <p className="mb-1 text-center font-display text-sm font-bold text-brown-900">📊 สเตตัสสายกิน 4 ด้าน</p>
               <Radar stats={stats} fill={persona.bgDeep} />
             </div>
           </div>
 
-          {/* Strengths / stats bars (4 axes, 'กินจุ' removed) */}
+          {/* Strengths / stats bars (Sorted by score, strictly matching persona names) */}
           <div className="rounded-[28px] bg-white p-5 shadow-bento">
-            <p className="mb-3.5 font-display text-sm font-bold text-brown-900">💪 จุดเด่นประจำสายของคุณ</p>
+            <div className="mb-3.5 flex items-center justify-between">
+              <p className="font-display text-sm font-bold text-brown-900">💪 จุดเด่นประจำสายของคุณ</p>
+              <span className="text-[11px] font-medium text-brown-400">สัดส่วนคะแนนที่ตรงกับตัวตน</span>
+            </div>
             <div className="space-y-3">
-              {stats.map((s) => (
-                <div key={s.key} className="flex items-center gap-3">
-                  <span className="w-24 shrink-0 text-xs font-bold text-brown-700">
-                    {s.emoji} {s.label}
+              {sortedStats.map((s) => (
+                <div key={s.key} className="flex items-center gap-2.5 sm:gap-3">
+                  <span className="w-24 sm:w-28 shrink-0 flex items-center gap-1.5 text-xs font-bold text-brown-800">
+                    <span>{s.emoji}</span>
+                    <span>{s.label}</span>
+                    {s.isWinner && (
+                      <span className="rounded bg-warm-100 px-1 py-0.5 text-[9px] font-extrabold text-terracotta-600">
+                        ★ สายคุณ
+                      </span>
+                    )}
                   </span>
                   <div className="h-4 flex-1 overflow-hidden rounded-full bg-sand-100">
                     <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{ width: `${Math.max(s.value, 6)}%`, backgroundColor: persona.bgDeep }}
+                      className={`h-full rounded-full transition-all duration-700 ${
+                        s.isWinner
+                          ? 'bg-gradient-to-r from-warm-400 to-terracotta-500 shadow-sm'
+                          : 'bg-sand-300'
+                      }`}
+                      style={{ width: `${Math.max(s.value, 6)}%` }}
                     />
                   </div>
-                  <span className="w-10 shrink-0 text-right text-xs font-bold text-brown-900">{s.value}</span>
+                  <span className={`w-12 shrink-0 text-right font-mono text-xs font-bold ${s.isWinner ? 'text-terracotta-600 font-extrabold text-sm' : 'text-brown-700'}`}>
+                    {s.value}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -296,11 +320,11 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
   )
 }
 
-/** Dependency-free SVG radar chart (diamond for 4 axes) */
+/** Dependency-free SVG radar chart with clear axis labels */
 function Radar({ stats, fill }) {
-  const size = 220
+  const size = 260
   const c = size / 2
-  const R = 75
+  const R = 68
   const n = stats.length
   const INK = '#c9b39d'
 
@@ -311,10 +335,11 @@ function Radar({ stats, fill }) {
   const poly = (radiusFn) => stats.map((s, i) => pt(i, radiusFn(s)).join(',')).join(' ')
 
   const rings = [0.25, 0.5, 0.75, 1]
-  const dataPoints = stats.map((s, i) => pt(i, (R * s.value) / 100).join(',')).join(' ')
+  const dataPoints = stats.map((s, i) => pt(i, Math.max((R * s.value) / 100, 6)).join(',')).join(' ')
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto block w-full max-w-[220px]" role="img" aria-label="radar chart">
+    <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto block w-full max-w-[260px]" role="img" aria-label="radar chart">
+      {/* Background Rings */}
       {rings.map((f) => (
         <polygon
           key={f}
@@ -325,14 +350,44 @@ function Radar({ stats, fill }) {
           strokeDasharray="2 3"
         />
       ))}
-      {stats.map((_, i) => {
-        const [x, y] = pt(i, R)
-        return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke={INK} strokeWidth="1" strokeDasharray="2 3" />
-      })}
-      <polygon points={dataPoints} fill={fill} fillOpacity="0.45" stroke="#78350f" strokeWidth="2.5" />
+
+      {/* Axis Lines and Labels */}
       {stats.map((s, i) => {
-        const [x, y] = pt(i, (R * s.value) / 100)
-        return <circle key={s.key} cx={x} cy={y} r="4.5" fill="#78350f" />
+        const [x, y] = pt(i, R)
+        const [lx, ly] = pt(i, R + 22)
+        return (
+          <g key={s.key}>
+            <line x1={c} y1={c} x2={x} y2={y} stroke={INK} strokeWidth="1" strokeDasharray="2 3" />
+            <text
+              x={lx}
+              y={ly}
+              textAnchor="middle"
+              dominantBaseline="central"
+              className={`text-[10px] font-display font-bold ${
+                s.isWinner ? 'fill-terracotta-600 font-extrabold' : 'fill-brown-600'
+              }`}
+            >
+              {s.emoji} {s.label}
+            </text>
+          </g>
+        )
+      })}
+
+      {/* Area Polygon */}
+      <polygon points={dataPoints} fill={fill} fillOpacity="0.5" stroke="#78350f" strokeWidth="2.5" />
+
+      {/* Data Points */}
+      {stats.map((s, i) => {
+        const [x, y] = pt(i, Math.max((R * s.value) / 100, 6))
+        return (
+          <circle
+            key={s.key}
+            cx={x}
+            cy={y}
+            r={s.isWinner ? 5.5 : 4}
+            fill={s.isWinner ? '#c2410c' : '#78350f'}
+          />
+        )
       })}
     </svg>
   )
