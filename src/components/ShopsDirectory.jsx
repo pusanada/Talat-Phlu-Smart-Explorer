@@ -84,8 +84,8 @@ export default function ShopsDirectory({ shops = [], votes = {}, onVote, loading
 }
 
 function VideoShopCard({ shop, rank, vote, onVote }) {
-  const total = shop.likes + shop.dislikes
-  const score = total > 0 ? Math.round((shop.likes / total) * 100) : 100
+  const total = (shop.likes || 0) + (shop.dislikes || 0)
+  const score = total > 0 ? Math.round(((shop.likes || 0) / total) * 100) : 0
 
   const cast = (kind) => onVote(shop.id, vote === kind ? null : kind)
 

@@ -12,8 +12,9 @@ import { useTeam } from './hooks/useTeam'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { createShop, deleteShop, DEFAULT_SHOPS, getShops, recordVote, updateShop } from './services/shopService'
 import { createPost, getPosts, likePost } from './services/postService'
-import { getQuizQuestions } from './services/quizService'
+import { getQuizQuestions, recordQuizSubmission } from './services/quizService'
 import { DEFAULT_QUIZ_QUESTIONS } from './constants/defaultQuestions'
+import { computePersona, computeTally, PERSONAS } from './constants/personas'
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('quiz')
@@ -181,6 +182,20 @@ export default function App() {
     }
   }
 
+  const handleFinishQuiz = async () => {
+    if (quizAnswers.every((a) => a !== null)) {
+      setQuizDone(true)
+      const personaKey = computePersona(quizAnswers, questions)
+      const personaObj = PERSONAS[personaKey] || PERSONAS.street
+      const tallyScores = computeTally(quizAnswers, questions)
+      await recordQuizSubmission({
+        persona: personaObj,
+        answers: quizAnswers,
+        scores: tallyScores,
+      })
+    }
+  }
+
   // ── Community board ──────────────────────────────────────────
   const handleAddPost = async ({ author, message, shop_id }) => {
     const created = await createPost({ author, message, shop_id })
@@ -219,9 +234,7 @@ export default function App() {
               questions={questions}
               loading={loading}
               onChange={setQuizAnswers}
-              onFinish={() => {
-                if (quizAnswers.every((a) => a !== null)) setQuizDone(true)
-              }}
+              onFinish={handleFinishQuiz}
             />
           ))}
 

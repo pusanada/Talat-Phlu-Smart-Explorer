@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react'
-import { Award, Check, Download, Loader2, RotateCcw, Share2, Trophy } from 'lucide-react'
+import { Award, Check, Download, Loader2, MapPin, RotateCcw, Share2, Trophy } from 'lucide-react'
 import { toBlob, toPng } from 'html-to-image'
 import ShopCard from './ShopCard'
-import GoogleMapView from './GoogleMapView'
 import Mascot from './Mascot'
 import { PERSONAS, computeTally, computePersona, getRecommendedShops } from '../constants/personas'
 
@@ -303,17 +302,41 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           </div>
         </div>
 
-        {/* ── Google Maps Section ── */}
+        {/* ── Illustrated Map Section (data_pic overview map) ── */}
         <div className="mt-8">
           <div className="mb-1 flex items-end justify-between">
-            <h3 className="font-display text-xl font-bold text-brown-900">🗺️ แผนที่ตลาดพลู (Google Maps)</h3>
-            <span className="text-xs font-bold text-brown-500">พิกัดร้านค้าจริง</span>
+            <h3 className="font-display text-xl font-bold text-brown-900">🗺️ แผนที่ภาพรวมย่านตลาดพลู</h3>
+            <span className="text-xs font-bold text-terracotta-600">ลายแทงของกิน</span>
           </div>
           <p className="mb-3 text-xs font-medium text-brown-500">
-            ดูตำแหน่งและปักหมุดร้านเด็ดในตลาดพลู พร้อมระบบเปิดนำทาง
+            แผนที่ท่องเที่ยวและจุดปักหมุดร้านเด็ดรอบสถานีรถไฟตลาดพลู
           </p>
 
-          <GoogleMapView shops={recommended.length > 0 ? recommended : shops} />
+          <div className="overflow-hidden rounded-[28px] bg-white p-3 shadow-bento border border-sand-100">
+            <div className="relative overflow-hidden rounded-[20px] bg-sand-100">
+              <img
+                src="/images/talat-phlu-map.jpg"
+                alt="แผนที่ภาพรวมย่านตลาดพลู"
+                loading="lazy"
+                className="w-full object-contain transition-transform duration-300 hover:scale-[1.01]"
+              />
+            </div>
+
+            <div className="mt-3 flex flex-col sm:flex-row items-center justify-between gap-2.5 px-2 pb-1">
+              <p className="text-xs font-semibold text-brown-600">
+                📍 นิอ่าง น้ำแข็งใส ไอติมไข่แข็ง ตลาดพลู เลียบทางรถไฟ
+              </p>
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=%E0%B8%99%E0%B8%B4%E0%B8%AD%E0%B9%88%E0%B8%B2%E0%B8%87%20%E0%B8%99%E0%B9%89%E0%B8%B3%E0%B9%81%E0%B8%82%E0%B9%87%E0%B8%87%E0%B9%83%E0%B8%AA%20%E0%B9%84%E0%B8%AD%E0%B8%95%E0%B8%B4%E0%B8%A1%E0%B9%84%E0%B8%82%E0%B9%88%E0%B9%81%E0%B8%82%E0%B9%87%E0%B8%87%20%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%9E%E0%B8%A5%E0%B8%B9"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded-full bg-terracotta-500 px-4 py-2 text-xs font-bold text-white shadow-bento-sm hover:bg-terracotta-600 transition"
+              >
+                <MapPin className="h-3.5 w-3.5" />
+                เปิดนำทาง Google Maps
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>

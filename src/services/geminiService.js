@@ -2,23 +2,31 @@
 // Google Gemini AI Service for Talat Phlu Smart Explorer
 // ─────────────────────────────────────────────────────────────
 
-const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || '').trim()
+function getApiKey() {
+  const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : (typeof process !== 'undefined' ? process.env : {})
+  return (env.VITE_GEMINI_API_KEY || '').trim()
+}
 
 export const isGeminiConfigured = Boolean(
-  apiKey &&
-  !apiKey.includes('your-gemini') &&
-  !apiKey.includes('placeholder')
+  getApiKey() &&
+  !getApiKey().includes('your-gemini') &&
+  !getApiKey().includes('placeholder')
 )
 
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-flash-latest',
+  'gemini-2.5-flash-lite',
+]
+
 /**
- * Call Google Gemini API (gemini-2.5-flash or gemini-1.5-flash)
+ * Call Google Gemini API with automatic model fallbacks
  */
 async function callGemini(systemInstruction, userPrompt) {
-  if (!isGeminiConfigured) {
+  const key = getApiKey()
+  if (!key) {
     return 'กรุณาใส่ VITE_GEMINI_API_KEY ในไฟล์ .env เพื่อเปิดใช้งานระบบ AI ช่วยแนะนำร้านอาหารตลาดพลู'
   }
-
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`
 
   const requestBody = {
     contents: [
@@ -33,46 +41,33 @@ async function callGemini(systemInstruction, userPrompt) {
     },
   }
 
-  try {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    })
+  let lastError = null
 
-    if (!res.ok) {
-      // Fallback to gemini-1.5-flash if 2.5 is not available on this key
-      const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
-      const fallbackRes = await fetch(fallbackEndpoint, {
+  for (const model of GEMINI_MODELS) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
+    try {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
       })
 
-      if (!fallbackRes.ok) {
-        const errorData = await fallbackRes.json().catch(() => ({}))
-        console.error('Gemini API Error:', errorData)
-        return `ขออภัย ไม่สามารถเรียกข้อมูลจาก Gemini AI ได้ในขณะนี้ (${fallbackRes.statusText})`
+      if (res.ok) {
+        const data = await res.json()
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (text) return text
+      } else {
+        const errorJson = await res.json().catch(() => ({}))
+        console.warn(`Gemini model ${model} failed (${res.status}):`, errorJson)
+        lastError = errorJson?.error?.message || res.statusText
       }
-
-      const fallbackJson = await fallbackRes.json()
-      return (
-        fallbackJson?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        'ไม่พบคำตอบจาก Gemini AI'
-      )
+    } catch (err) {
+      console.warn(`Gemini model ${model} network error:`, err)
+      lastError = err.message
     }
-
-    const data = await res.json()
-    return (
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      'ไม่พบคำตอบจาก Gemini AI'
-    )
-  } catch (err) {
-    console.error('Gemini Service network error:', err)
-    return 'เกิดข้อผิดพลาดในการเชื่อมต่อกับ Gemini API โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณ'
   }
+
+  return `ขออภัย ระบบ AI ขัดข้องชั่วคราว (${lastError || 'กรุณาลองใหม่อีกครั้ง'})`
 }
 
 /**

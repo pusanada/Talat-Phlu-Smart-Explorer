@@ -147,6 +147,7 @@ export default function Board({ posts = [], onAddPost, onLikePost, shops = [], l
                 <button
                   type="button"
                   onClick={() => toggleLike(post.id)}
+                  aria-pressed={!!liked[post.id]}
                   className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition active:scale-95 ${
                     liked[post.id]
                       ? 'bg-terracotta-500 text-white shadow-bento-sm'
@@ -154,7 +155,7 @@ export default function Board({ posts = [], onAddPost, onLikePost, shops = [], l
                   }`}
                 >
                   <Heart className={`h-4 w-4 ${liked[post.id] ? 'fill-current' : ''}`} aria-hidden="true" />
-                  {((post.likes || 0) + (liked[post.id] ? 1 : 0)).toLocaleString()}
+                  {(post.likes || 0).toLocaleString()}
                 </button>
               </div>
             </article>

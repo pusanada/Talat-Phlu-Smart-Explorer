@@ -233,3 +233,27 @@ values
     ]'::jsonb
   )
 on conflict (id) do nothing;
+
+
+-- ====================================================================
+-- 5. Create Quiz Submissions Table (บันทึกข้อมูลผลลัพธ์ของผู้ทำควิซ)
+-- ====================================================================
+create table if not exists public.quiz_submissions (
+  id text primary key,
+  persona text not null,
+  persona_name text not null,
+  answers integer[] not null,
+  scores jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.quiz_submissions enable row level security;
+
+create policy "Allow public insert on quiz_submissions"
+  on public.quiz_submissions for insert
+  with check (true);
+
+create policy "Allow public read on quiz_submissions"
+  on public.quiz_submissions for select
+  using (true);
+

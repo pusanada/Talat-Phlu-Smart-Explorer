@@ -14,8 +14,8 @@ export const DEFAULT_SHOPS = [
     video_duration: '2:05',
     personas: ['sweet', 'chill', 'street', 'healthy'],
     category: 'ของหวานโบราณ',
-    likes: 412,
-    dislikes: 18,
+    likes: 0,
+    dislikes: 0,
   },
 ]
 
