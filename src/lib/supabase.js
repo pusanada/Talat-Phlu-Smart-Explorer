@@ -1,7 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim()
-const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
+const rawAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
+// Auto-heal common typo where 'sb_' was typed as 'ssb_'
+const supabaseAnonKey = rawAnonKey.startsWith('ssb_') ? rawAnonKey.slice(1) : rawAnonKey
 
 /**
  * Checks if real Supabase environment variables are provided
