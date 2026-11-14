@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
-import { CheckCircle2, Film, MapPin, Pencil, PlusCircle, Save, Store, Trash2, Users, Video, X } from 'lucide-react'
+import { Camera, CheckCircle2, Film, Loader2, MapPin, Pencil, PlusCircle, Save, Sparkles, Store, Trash2, Users, Video, X } from 'lucide-react'
 import TeamPanel from './TeamPanel'
+import { extractPlaceId, fetchGooglePlacePhoto } from '../services/mapPhotoService'
 
 const EMPTY_FORM = {
   shop_type: 'story', // 'story' | 'all_shops'
@@ -42,7 +43,33 @@ export default function AdminDashboard({
   const [errors, setErrors] = useState({})
   const [editingId, setEditingId] = useState(null)
   const [successMsg, setSuccessMsg] = useState('')
+  const [fetchingPhoto, setFetchingPhoto] = useState(false)
+  const [photoFetchNotice, setPhotoFetchNotice] = useState('')
   const fileInputRef = useRef(null)
+
+  const handleFetchMapPhoto = async () => {
+    if (!form.map_link.trim() && !form.name.trim()) {
+      setPhotoFetchNotice('กรุณากรอกลิงก์ Google Maps หรือชื่อร้านก่อนกดดึงภาพ')
+      return
+    }
+    setFetchingPhoto(true)
+    setPhotoFetchNotice('')
+    try {
+      const placeId = extractPlaceId(form.map_link)
+      const photoUrl = await fetchGooglePlacePhoto(placeId, form.name)
+      if (photoUrl) {
+        setField('imageUrl', photoUrl)
+        setImagePreview(photoUrl)
+        setPhotoFetchNotice('✓ ดึงภาพจาก Google Maps สำเร็จแล้ว!')
+      } else {
+        setPhotoFetchNotice('ยังไม่พบภาพจาก API แนะนำ: คลิกขวาที่รูปใน Google Maps แล้วเลือก "คัดลอกที่อยู่รูปภาพ" (Copy image address) มาวางในช่องนี้ได้ทันทีครับ')
+      }
+    } catch {
+      setPhotoFetchNotice('เกิดข้อผิดพลาดในการดึงภาพ')
+    } finally {
+      setFetchingPhoto(false)
+    }
+  }
 
   const setField = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }))
@@ -367,13 +394,45 @@ export default function AdminDashboard({
                       </div>
                     )}
                   </div>
-                  <input
-                    type="url"
-                    value={form.imageUrl}
-                    onChange={(e) => setField('imageUrl', e.target.value)}
-                    placeholder="หรือวางลิงก์รูปจริงจาก Google Maps (https://...)"
-                    className={inputClass(null, 'text-xs')}
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={form.imageUrl}
+                      onChange={(e) => {
+                        setField('imageUrl', e.target.value)
+                        if (e.target.value) setImagePreview(e.target.value)
+                      }}
+                      placeholder="วางลิงก์รูปจริงจาก Google Maps (https://...)"
+                      className={inputClass(null, 'text-xs flex-1')}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleFetchMapPhoto}
+                      disabled={fetchingPhoto}
+                      title="ดึงรูปภาพหน้าปกอัตโนมัติจาก Google Maps"
+                      className="flex items-center gap-1 rounded-2xl bg-warm-100 hover:bg-warm-200 px-3 py-2 text-xs font-bold text-terracotta-700 transition active:scale-95 shrink-0 disabled:opacity-50"
+                    >
+                      {fetchingPhoto ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          กำลังดึง...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-3.5 w-3.5 text-warm-600" />
+                          ดึงภาพจาก Map
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {photoFetchNotice && (
+                    <p className={`text-[11px] leading-relaxed rounded-xl p-2 ${
+                      photoFetchNotice.startsWith('✓') ? 'bg-emerald-50 text-emerald-700' : 'bg-sand-100 text-brown-600'
+                    }`}>
+                      {photoFetchNotice}
+                    </p>
+                  )}
                 </div>
               </Field>
 
