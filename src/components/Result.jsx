@@ -13,13 +13,22 @@ const AXES = [
   { key: 'healthy', label: PERSONAS.healthy.name, emoji: PERSONAS.healthy.emoji },
 ]
 
+const PERSONA_TAGS = {
+  sweet: ['#สายหวานตัวจริง', '#ของหวานระดับตำนาน', '#ไอติมไข่แข็งตลาดพลู'],
+  street: ['#สายสตรีทฟู้ด', '#กินดะรอบสถานี', '#ตำนานหมี่กรอบร้อยปี'],
+  chill: ['#สายชิลริมคลอง', '#สเปเชียลตี้คอฟฟี่', '#คาเฟ่ฮอปปิ้ง'],
+  healthy: ['#สายเฮลตี้รักสุขภาพ', '#ของอร่อยคัดพิเศษ', '#เน้นคุณภาพ'],
+}
+
 export default function Result({ answers, shops = [], onRestart, questions }) {
   const tally = computeTally(answers, questions)
   const persona = PERSONAS[computePersona(answers, questions)] || PERSONAS.street
   const recommended = getRecommendedShops(shops, persona.key)
+  const tags = PERSONA_TAGS[persona.key] || PERSONA_TAGS.sweet
 
-  // Card ref for Image Export
+  // Card ref for live view & dedicated compact export ref
   const cardRef = useRef(null)
+  const exportCardRef = useRef(null)
   const [exporting, setExporting] = useState(false)
   const [toast, setToast] = useState('')
   const [characterImgError, setCharacterImgError] = useState(false)
@@ -42,7 +51,8 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
   const sortedStats = [...stats].sort((a, b) => b.value - a.value)
 
   const handleExportImage = async () => {
-    if (!cardRef.current || exporting) return
+    const targetNode = exportCardRef.current || cardRef.current
+    if (!targetNode || exporting) return
     setExporting(true)
     setToast('กำลังสร้างรูปภาพ IG Story...')
 
@@ -53,35 +63,22 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
       }
       await new Promise((resolve) => setTimeout(resolve, 200))
 
-      const node = cardRef.current
-      // Capture the exact bounding dimensions with zero mismatch
-      const width = Math.ceil(node.scrollWidth || node.offsetWidth || 380)
-      const height = Math.ceil(node.scrollHeight || node.offsetHeight || 600)
-
       const exportOptions = {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: persona.bg,
         skipFonts: true, // Use browser's rendered fonts to avoid webfont CORS and serif fallback
-        width,
-        height,
-        style: {
-          width: `${width}px`,
-          height: `${height}px`,
-          margin: '0',
-          maxWidth: 'none',
-        },
       }
 
       // 2. Generate High-Res PNG Data URL
-      const dataUrl = await toPng(node, exportOptions)
+      const dataUrl = await toPng(targetNode, exportOptions)
 
       let shared = false
 
       // 3. Try Native Web Share with file on supported devices (Mobile Chrome / Safari)
       if (typeof navigator !== 'undefined' && navigator.canShare && navigator.share) {
         try {
-          const blob = await toBlob(node, exportOptions)
+          const blob = await toBlob(targetNode, exportOptions)
           if (blob) {
             const file = new File([blob], `talat-phlu-${persona.key}.png`, { type: 'image/png' })
             if (navigator.canShare({ files: [file] })) {
@@ -404,17 +401,178 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           </div>
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      {/* DEDICATED COMPACT EXPORT CARD (Off-screen snapshot container) */}
+      {/* Designed specifically for CakeResume / Miffy style IG Story  */}
+      {/* ═══════════════════════════════════════════════════════════════ */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: '-9999px',
+          width: '480px',
+          pointerEvents: 'none',
+          zIndex: -999,
+        }}
+      >
+        <div
+          ref={exportCardRef}
+          className="w-[480px] rounded-[32px] p-5 space-y-3.5 shadow-2xl border-4 border-white/80 font-sans"
+          style={{ backgroundColor: persona.bg }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-black/10 pb-2 text-[11px] font-bold text-brown-800">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">🍧</span>
+              <span className="font-display font-black text-brown-900 text-xs">ตลาดพลู สมาร์ทโซน</span>
+            </div>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-brown-500 font-bold">
+              Talat Phlu Smart Explorer
+            </span>
+          </div>
+
+          {/* Top Section: Profile Info (Left) + Character (Right) */}
+          <div className="flex items-center gap-3 rounded-2xl bg-white/90 backdrop-blur p-3.5 border border-white/70 shadow-bento-sm">
+            {/* Left: Persona info */}
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8.5px] font-black uppercase tracking-wider bg-warm-100 text-warm-700">
+                ★ YOU ARE ★
+              </div>
+              <h2 className="font-display text-2xl font-black text-brown-900 leading-none">
+                {persona.name} {persona.emoji}
+              </h2>
+              <div className="flex flex-wrap gap-1 pt-0.5">
+                {tags.map((t) => (
+                  <span key={t} className="rounded-md bg-sand-100 px-1.5 py-0.5 text-[8.5px] font-bold text-brown-700">
+                    {t}
+                  </span>
+                ))}
+              </div>
+              <p className="text-[10px] font-semibold leading-relaxed text-brown-700 pt-0.5">
+                {persona.tagline}
+              </p>
+            </div>
+
+            {/* Right: Character Hero */}
+            <div className="relative h-36 w-32 shrink-0 flex items-center justify-center">
+              <div
+                className="absolute inset-0 rounded-2xl blur-lg opacity-40"
+                style={{ backgroundColor: persona.bgDeep }}
+              />
+              {characterSrc ? (
+                <img
+                  src={characterSrc}
+                  alt={persona.name}
+                  className="relative h-32 w-auto object-contain drop-shadow-md select-none"
+                />
+              ) : (
+                <div className="relative scale-75">
+                  <Mascot mood="happy" speech={persona.name} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Middle Section: Radar Chart (Left) + Strengths (Right) */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Left Bento: Radar Chart */}
+            <div className="rounded-2xl bg-white/90 p-3 shadow-bento-sm border border-sand-100 flex flex-col items-center justify-center">
+              <h4 className="mb-1 text-center font-display text-[11px] font-bold text-brown-900">
+                📊 สเตตัสสายกิน 4 ด้าน
+              </h4>
+              <Radar stats={stats} fill={persona.bgDeep} size={175} />
+            </div>
+
+            {/* Right Bento: Strengths Progress */}
+            <div className="rounded-2xl bg-white/90 p-3 shadow-bento-sm border border-sand-100 flex flex-col justify-between">
+              <div className="mb-1.5 flex items-center justify-between">
+                <h4 className="font-display text-[11px] font-bold text-brown-900">💪 จุดเด่นประจำสาย</h4>
+                <span className="text-[9px] font-semibold text-brown-400">สัดส่วนคะแนน</span>
+              </div>
+              <div className="space-y-2">
+                {sortedStats.map((s) => (
+                  <div key={s.key} className="space-y-0.5">
+                    <div className="flex items-center justify-between text-[9.5px] font-bold text-brown-800">
+                      <span className="flex items-center gap-1">
+                        <span>{s.emoji}</span>
+                        <span>{s.label}</span>
+                        {s.isWinner && (
+                          <span className="rounded bg-warm-100 px-1 py-0.2 text-[7.5px] font-black text-terracotta-600">
+                            สายคุณ
+                          </span>
+                        )}
+                      </span>
+                      <span className={s.isWinner ? 'text-terracotta-600 font-extrabold' : 'text-brown-600'}>
+                        {s.value}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-sand-100">
+                      <div
+                        className={`h-full rounded-full ${
+                          s.isWinner ? 'bg-gradient-to-r from-warm-400 to-terracotta-500' : 'bg-sand-300'
+                        }`}
+                        style={{ width: `${Math.max(s.value, 6)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Lower Bento: Trophy Case Badges */}
+          <div className="rounded-2xl bg-white/90 p-3 shadow-bento-sm border border-sand-100">
+            <div className="flex items-center justify-between border-b border-sand-100 pb-1 mb-2">
+              <span className="flex items-center gap-1 font-display text-[11px] font-bold text-brown-900">
+                <Trophy className="h-3.5 w-3.5 text-warm-500" /> เหรียญรางวัลที่ปลดล็อก
+              </span>
+              <span className="text-[9px] font-extrabold text-terracotta-600 bg-sand-100 px-2 py-0.5 rounded-full">
+                +500 EXP ⭐
+              </span>
+            </div>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
+                <span className="text-base">🎖️</span>
+                <p className="text-[9.5px] font-bold text-brown-800">Rookie</p>
+                <p className="text-[8px] text-brown-400">ตอบข้อแรก</p>
+              </div>
+              <div className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
+                <span className="text-base">🔥</span>
+                <p className="text-[9.5px] font-bold text-brown-800">5-Combo</p>
+                <p className="text-[8px] text-brown-400">สตรีคครบ 5</p>
+              </div>
+              <div className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
+                <span className="text-base">{persona.emoji}</span>
+                <p className="text-[9.5px] font-bold text-brown-800">{persona.name}</p>
+                <p className="text-[8px] text-brown-400">ตราประจำสาย</p>
+              </div>
+              <div className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
+                <span className="text-base">👑</span>
+                <p className="text-[9.5px] font-bold text-brown-800">Lv.2 Hunter</p>
+                <p className="text-[8px] text-brown-400">ปลดล็อกสำเร็จ</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Branding */}
+          <div className="flex items-center justify-between pt-0.5 text-[9.5px] font-semibold text-brown-600/80 px-1">
+            <span>🍧 ค้นหาสายกินของคุณได้ที่ ตลาดพลู สมาร์ทโซน</span>
+            <span>#ตลาดพลู #TalatPhlu</span>
+          </div>
+        </div>
+      </div>
     </section>
   )
 }
 
-/** Dependency-free SVG radar chart with clear axis labels */
-function Radar({ stats, fill }) {
-  const size = 260
+/** Dependency-free SVG radar chart with clear axis labels & auto-scaling */
+function Radar({ stats, fill, size = 260 }) {
   const c = size / 2
-  const R = 68
+  const R = size * 0.26
   const n = stats.length
   const INK = '#c9b39d'
+  const isCompact = size < 220
 
   const pt = (i, r) => {
     const a = -Math.PI / 2 + (i * 2 * Math.PI) / n
@@ -423,10 +581,10 @@ function Radar({ stats, fill }) {
   const poly = (radiusFn) => stats.map((s, i) => pt(i, radiusFn(s)).join(',')).join(' ')
 
   const rings = [0.25, 0.5, 0.75, 1]
-  const dataPoints = stats.map((s, i) => pt(i, Math.max((R * s.value) / 100, 6)).join(',')).join(' ')
+  const dataPoints = stats.map((s, i) => pt(i, Math.max((R * s.value) / 100, 5)).join(',')).join(' ')
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto block w-full max-w-[260px]" role="img" aria-label="radar chart">
+    <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto block w-full" style={{ maxWidth: `${size}px` }} role="img" aria-label="radar chart">
       {/* Background Rings */}
       {rings.map((f) => (
         <polygon
@@ -434,7 +592,7 @@ function Radar({ stats, fill }) {
           points={poly(() => R * f)}
           fill="none"
           stroke={INK}
-          strokeWidth="1"
+          strokeWidth={isCompact ? '0.75' : '1'}
           strokeDasharray="2 3"
         />
       ))}
@@ -442,16 +600,16 @@ function Radar({ stats, fill }) {
       {/* Axis Lines and Labels */}
       {stats.map((s, i) => {
         const [x, y] = pt(i, R)
-        const [lx, ly] = pt(i, R + 22)
+        const [lx, ly] = pt(i, R + (isCompact ? 16 : 22))
         return (
           <g key={s.key}>
-            <line x1={c} y1={c} x2={x} y2={y} stroke={INK} strokeWidth="1" strokeDasharray="2 3" />
+            <line x1={c} y1={c} x2={x} y2={y} stroke={INK} strokeWidth={isCompact ? '0.75' : '1'} strokeDasharray="2 3" />
             <text
               x={lx}
               y={ly}
               textAnchor="middle"
               dominantBaseline="central"
-              fontSize="11"
+              fontSize={isCompact ? '9' : '11'}
               fontFamily="'Kanit', 'Noto Sans Thai', sans-serif"
               fontWeight={s.isWinner ? '800' : '700'}
               fill={s.isWinner ? '#c2410c' : '#4a3527'}
@@ -463,17 +621,17 @@ function Radar({ stats, fill }) {
       })}
 
       {/* Area Polygon */}
-      <polygon points={dataPoints} fill={fill} fillOpacity="0.5" stroke="#78350f" strokeWidth="2.5" />
+      <polygon points={dataPoints} fill={fill} fillOpacity="0.5" stroke="#78350f" strokeWidth={isCompact ? '2' : '2.5'} />
 
       {/* Data Points */}
       {stats.map((s, i) => {
-        const [x, y] = pt(i, Math.max((R * s.value) / 100, 6))
+        const [x, y] = pt(i, Math.max((R * s.value) / 100, 5))
         return (
           <circle
             key={s.key}
             cx={x}
             cy={y}
-            r={s.isWinner ? 5.5 : 4}
+            r={s.isWinner ? (isCompact ? 4.5 : 5.5) : (isCompact ? 3 : 4)}
             fill={s.isWinner ? '#c2410c' : '#78350f'}
           />
         )
