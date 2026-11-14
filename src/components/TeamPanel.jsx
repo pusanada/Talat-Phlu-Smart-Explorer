@@ -1,4 +1,4 @@
-import { Clock, Mail, ShieldQuestion, UserMinus, UserPlus } from 'lucide-react'
+import { Clock, Mail, RefreshCw, ShieldQuestion, UserMinus, UserPlus } from 'lucide-react'
 import { ROLE_LABELS } from '../hooks/useTeam'
 
 /**
@@ -6,7 +6,7 @@ import { ROLE_LABELS } from '../hooks/useTeam'
  * Owner view: pending approvals inbox (with email) + full team list (owner-controlled).
  * Sub-admin view: invite-a-colleague section only.
  */
-export default function TeamPanel({ team, currentMember, onApprove, onReject, onRemoveMember, onResetTeam, onOpenInvite }) {
+export default function TeamPanel({ team, currentMember, onApprove, onReject, onRemoveMember, onResetTeam, onRefresh, onOpenInvite }) {
   const isOwner = currentMember.role === 'owner'
 
   return (
@@ -19,9 +19,21 @@ export default function TeamPanel({ team, currentMember, onApprove, onReject, on
               <Clock className="h-4 w-4 text-warm-500" aria-hidden="true" />
               คำขอรอการยืนยันทางอีเมล
             </h3>
-            <span className="rounded-full bg-warm-100 px-3 py-1 text-xs font-bold text-warm-600">
-              {team.pending.length} คำขอ
-            </span>
+            <div className="flex items-center gap-2">
+              {onRefresh && (
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  title="รีเฟรชคำขอจาก Supabase"
+                  className="rounded-full bg-sand-100 p-1.5 text-brown-600 hover:bg-sand-200 transition"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </button>
+              )}
+              <span className="rounded-full bg-warm-100 px-3 py-1 text-xs font-bold text-warm-600">
+                {team.pending.length} คำขอ
+              </span>
+            </div>
           </div>
 
           {team.pending.length === 0 ? (

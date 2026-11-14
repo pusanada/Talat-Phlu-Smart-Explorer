@@ -20,8 +20,28 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('quiz')
 
   // ── Auth / team ──────────────────────────────────────────────
-  const { team, login, addRequest, approve, reject, removeMember, reset } = useTeam()
-  const [member, setMember] = useState(null) // logged-in team member or null
+  const { team, login, addRequest, approve, reject, removeMember, reset, refreshRequests } = useTeam()
+
+  // Persistent login session in localStorage
+  const [member, setMember] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tp_admin_member')
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      return null
+    }
+  })
+
+  // Sync session state to localStorage
+  useEffect(() => {
+    try {
+      if (member) {
+        localStorage.setItem('tp_admin_member', JSON.stringify(member))
+      } else {
+        localStorage.removeItem('tp_admin_member')
+      }
+    } catch {}
+  }, [member])
   const [authModal, setAuthModal] = useState({ open: false, mode: 'login' })
   const [aiModalOpen, setAiModalOpen] = useState(false)
 
@@ -264,6 +284,7 @@ export default function App() {
               onReject={reject}
               onRemoveMember={removeMember}
               onResetTeam={reset}
+              onRefreshTeam={refreshRequests}
               onOpenInvite={() => openAuth('invite')}
             />
           ) : (

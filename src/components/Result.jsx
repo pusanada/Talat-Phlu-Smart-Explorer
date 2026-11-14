@@ -55,15 +55,13 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
       await new Promise((resolve) => setTimeout(resolve, 150))
 
       const node = cardRef.current
-      const width = Math.max(node.clientWidth || 0, 440)
-      const height = node.clientHeight || undefined
+      const width = Math.max(node.clientWidth || 0, 480)
 
       const exportOptions = {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: persona.bg,
         width,
-        height,
       }
 
       // 2. Generate High-Res PNG Data URL
@@ -163,7 +161,7 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
                   src={characterSrc}
                   alt={persona.name}
                   onError={() => setCharacterImgError(true)}
-                  className="w-full max-w-[300px] sm:max-w-[420px] max-h-[380px] sm:max-h-[460px] object-contain drop-shadow-[0_22px_32px_rgba(0,0,0,0.18)] select-none transition-transform duration-500 hover:scale-105"
+                  className="h-72 sm:h-88 md:h-96 w-auto max-w-full object-contain mx-auto select-none drop-shadow-[0_20px_35px_rgba(0,0,0,0.18)] transition-transform duration-500 hover:scale-105"
                 />
               ) : (
                 <div className="py-6 scale-125 sm:scale-150">
@@ -178,8 +176,8 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             </h1>
 
             {/* Brief Engaging Description in Soft Pill Badge */}
-            <div className="mt-3.5 inline-block max-w-xl mx-auto px-2">
-              <div className="rounded-full bg-white/90 backdrop-blur px-5 py-2.5 shadow-bento-sm border border-white/70">
+            <div className="mt-3.5 inline-block max-w-md mx-auto px-2">
+              <div className="rounded-full bg-white/95 backdrop-blur px-6 py-2.5 shadow-bento-sm border border-white/70">
                 <p className="text-xs sm:text-sm font-bold text-brown-700 leading-relaxed text-center">
                   {persona.tagline}
                 </p>
@@ -188,7 +186,7 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           </div>
 
           {/* ── STATS SECTION (BENTO-BOX STYLE CARDS) ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             {/* Radar Chart Card */}
             <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-bento border border-sand-100 flex flex-col items-center justify-center">
               <h3 className="mb-2 text-center font-display text-base font-bold text-brown-900 whitespace-nowrap">

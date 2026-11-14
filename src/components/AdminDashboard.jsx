@@ -31,6 +31,7 @@ export default function AdminDashboard({
   onReject,
   onRemoveMember,
   onResetTeam,
+  onRefreshTeam,
   onOpenInvite,
 }) {
   const isOwner = currentMember.role === 'owner'
@@ -191,6 +192,7 @@ export default function AdminDashboard({
           onReject={onReject}
           onRemoveMember={onRemoveMember}
           onResetTeam={onResetTeam}
+          onRefresh={onRefreshTeam}
           onOpenInvite={onOpenInvite}
         />
       ) : (

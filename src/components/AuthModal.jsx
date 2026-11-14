@@ -256,33 +256,12 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="รหัสเจ้าของระบบ (2580) หรือรหัสสุ่ม 6 หลัก"
+                      placeholder="รหัสผ่านผู้ดูแลระบบ หรือรหัสสุ่ม 6 หลัก"
                       required
                       className="w-full rounded-2xl border border-sand-200 bg-sand-50 px-4 py-2.5 text-sm font-semibold text-brown-900 outline-none transition placeholder:font-normal placeholder:text-brown-300 focus:border-terracotta-400 focus:ring-2 focus:ring-terracotta-400/20"
                     />
                     <LockKeyhole className="absolute right-3.5 top-3 h-4 w-4 text-brown-300" />
                   </div>
-                </div>
-
-                {/* Quick Owner Fill helper */}
-                <div className="rounded-2xl bg-sand-100/80 p-2.5 border border-sand-200 text-left">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-brown-800">👑 เข้าสู่ระบบเจ้าของระบบ (Owner):</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEmail('admin')
-                        setPassword('2580')
-                        setError('')
-                      }}
-                      className="rounded-full bg-warm-100 px-2.5 py-0.5 text-[10px] font-bold text-terracotta-600 hover:bg-warm-200 transition"
-                    >
-                      ⚡ กรอกให้อัตโนมัติ
-                    </button>
-                  </div>
-                  <p className="mt-1 text-[10px] text-brown-500 leading-tight">
-                    กรอกบัญชี <span className="font-mono font-bold text-brown-700">admin</span> หรือ <span className="font-mono font-bold text-brown-700">gantoja29@gmail.com</span> และรหัสผ่าน <span className="font-mono font-bold text-brown-700">2580</span>
-                  </p>
                 </div>
 
                 {error && (

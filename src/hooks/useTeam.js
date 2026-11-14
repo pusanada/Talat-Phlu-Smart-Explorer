@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { submitAdminRequest, updateRequestStatus, verifyAdminFromSupabase } from '../services/adminRequestService'
+import { getAdminRequests, submitAdminRequest, updateRequestStatus, verifyAdminFromSupabase } from '../services/adminRequestService'
 
 const STORAGE_KEY = 'talat-phlu-team-email-v1'
 const rawOwnerEmail = (import.meta.env.VITE_OWNER_EMAIL || '').trim().toLowerCase()
@@ -33,6 +33,7 @@ function load() {
 export function useTeam() {
   const [team, setTeam] = useState(load)
 
+  // Sync state to local storage for offline resilience
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(team))
@@ -40,6 +41,49 @@ export function useTeam() {
       // private mode
     }
   }, [team])
+
+  /**
+   * Fetch live admin requests from Supabase to show in dashboard
+   */
+  const refreshRequests = useCallback(async () => {
+    try {
+      const requests = await getAdminRequests()
+      if (!Array.isArray(requests)) return
+
+      setTeam((prev) => {
+        // Pending requests from Supabase
+        const pendingFromSupabase = requests.filter((r) => r.status === 'pending')
+
+        // Approved requests from Supabase
+        const approvedFromSupabase = requests.filter((r) => r.status === 'approved')
+        const currentMembers = [...prev.members]
+        approvedFromSupabase.forEach((app) => {
+          if (!currentMembers.some((m) => m.email?.toLowerCase() === app.email?.toLowerCase())) {
+            currentMembers.push({
+              id: app.id || `member_${app.email}`,
+              name: app.name,
+              email: app.email,
+              role: 'sub_admin',
+              reason: app.reason,
+              approved_at: app.created_at || new Date().toISOString(),
+            })
+          }
+        })
+
+        return {
+          members: currentMembers,
+          pending: pendingFromSupabase,
+        }
+      })
+    } catch (err) {
+      console.warn('Error syncing requests from Supabase:', err)
+    }
+  }, [])
+
+  // Auto-sync on mount
+  useEffect(() => {
+    refreshRequests()
+  }, [refreshRequests])
 
   /**
    * Log in via Email and Password/Code
@@ -176,11 +220,11 @@ export function useTeam() {
   )
 
   /** Owner confirms a pending request → becomes sub-admin */
-  const approve = useCallback((id) => {
+  const approve = useCallback(async (id) => {
+    await updateRequestStatus(id, 'approved')
     setTeam((d) => {
       const req = d.pending.find((p) => p.id === id)
       if (!req) return d
-      updateRequestStatus(id, 'approved')
       return {
         members: [
           ...d.members,
@@ -200,8 +244,8 @@ export function useTeam() {
   }, [])
 
   /** Owner rejects a pending request */
-  const reject = useCallback((id) => {
-    updateRequestStatus(id, 'rejected')
+  const reject = useCallback(async (id) => {
+    await updateRequestStatus(id, 'rejected')
     setTeam((d) => ({ ...d, pending: d.pending.filter((p) => p.id !== id) }))
   }, [])
 
@@ -220,7 +264,7 @@ export function useTeam() {
     setTeam(SEED)
   }, [])
 
-  return { team, login, addRequest, approve, reject, removeMember, reset, defaultOwnerEmail: DEFAULT_OWNER_EMAIL }
+  return { team, login, addRequest, approve, reject, removeMember, reset, refreshRequests, defaultOwnerEmail: DEFAULT_OWNER_EMAIL }
 }
 
 export const ROLE_LABELS = {
