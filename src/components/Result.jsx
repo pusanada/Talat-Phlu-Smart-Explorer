@@ -44,26 +44,37 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
   const handleExportImage = async () => {
     if (!cardRef.current || exporting) return
     setExporting(true)
-    setToast('กำลังสร้างรูปภาพผลลัพธ์...')
+    setToast('กำลังสร้างรูปภาพ IG Story...')
 
     try {
-      // 1. Generate High-Res PNG Data URL
-      const dataUrl = await toPng(cardRef.current, {
+      // 1. Wait for web fonts (Noto Sans Thai, Kanit) to finish loading
+      if (typeof document !== 'undefined' && document.fonts) {
+        await document.fonts.ready
+      }
+      // Give a brief moment for styles & fonts to settle
+      await new Promise((resolve) => setTimeout(resolve, 150))
+
+      const node = cardRef.current
+      const width = Math.max(node.clientWidth || 0, 440)
+      const height = node.clientHeight || undefined
+
+      const exportOptions = {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: persona.bg,
-      })
+        width,
+        height,
+      }
+
+      // 2. Generate High-Res PNG Data URL
+      const dataUrl = await toPng(node, exportOptions)
 
       let shared = false
 
-      // 2. Try Native Web Share with file on supported devices (Mobile Chrome / Safari)
+      // 3. Try Native Web Share with file on supported devices (Mobile Chrome / Safari)
       if (typeof navigator !== 'undefined' && navigator.canShare && navigator.share) {
         try {
-          const blob = await toBlob(cardRef.current, {
-            cacheBust: true,
-            pixelRatio: 2,
-            backgroundColor: persona.bg,
-          })
+          const blob = await toBlob(node, exportOptions)
           if (blob) {
             const file = new File([blob], `talat-phlu-${persona.key}.png`, { type: 'image/png' })
             if (navigator.canShare({ files: [file] })) {
@@ -80,7 +91,7 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
         }
       }
 
-      // 3. Fallback to direct PNG download
+      // 4. Fallback to direct PNG download
       if (!shared) {
         const link = document.createElement('a')
         link.download = `talat-phlu-${persona.key}.png`
@@ -88,7 +99,7 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
         link.click()
       }
 
-      setToast('📸 บันทึกรูปภาพผลลัพธ์เรียบร้อยแล้ว!')
+      setToast('📸 บันทึกรูปภาพ IG Story เรียบร้อยแล้ว!')
       setTimeout(() => setToast(''), 3500)
     } catch (err) {
       console.error('Failed to export image:', err)
@@ -114,7 +125,11 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
 
       <div className="mx-auto max-w-3xl">
         {/* ── EXPORTABLE CONTAINER (Captured for Image Export) ── */}
-        <div ref={cardRef} className="rounded-[40px] p-2 sm:p-4 space-y-4" style={{ backgroundColor: persona.bg }}>
+        <div
+          ref={cardRef}
+          className="mx-auto w-full max-w-2xl rounded-[40px] px-3 py-4 sm:p-6 space-y-5"
+          style={{ backgroundColor: persona.bg }}
+        >
           {/* Watermark branding header for shared image */}
           <div className="flex items-center justify-between px-3 pt-2 text-[11px] font-bold text-brown-600/80">
             <span className="flex items-center gap-1.5">
@@ -123,17 +138,17 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             <span className="font-mono uppercase tracking-wider text-[10px]">Talat Phlu Smart Explorer</span>
           </div>
 
-          {/* ── HERO CHARACTER SHOWCASE (CENTERED) ── */}
-          <div className="mx-auto max-w-lg rounded-[36px] bg-white p-5 sm:p-7 shadow-bento-lg border border-sand-100 text-center relative overflow-hidden">
+          {/* ── HERO SECTION: 3D-STYLE FLOATING CHARACTER (NO BOXES) ── */}
+          <div className="pt-2 pb-5 text-center relative">
             {/* Ambient Aura Background */}
             <div
-              className="absolute -top-20 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full blur-3xl opacity-35 pointer-events-none"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-72 w-72 sm:h-96 sm:w-96 rounded-full blur-3xl opacity-40 pointer-events-none"
               style={{ backgroundColor: persona.bgDeep }}
             />
 
             {/* Badge: YOU ARE */}
             <div
-              className="relative inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-[11px] font-black uppercase tracking-[0.25em] shadow-sm border border-sand-200"
+              className="relative inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-[11px] font-black uppercase tracking-[0.25em] shadow-sm border border-black/5"
               style={{ backgroundColor: persona.bgDeep, color: persona.ink }}
             >
               <span>★</span>
@@ -141,66 +156,63 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
               <span>★</span>
             </div>
 
-            {/* Centered Character Figure */}
-            <div className="relative my-4 flex items-center justify-center">
-              <div
-                className="relative flex items-center justify-center rounded-[32px] p-4 transition-transform duration-300 hover:scale-[1.02] shadow-inner max-w-xs w-full"
-                style={{ backgroundColor: `${persona.bgDeep}40` }}
-              >
-                {characterSrc ? (
-                  <img
-                    src={characterSrc}
-                    alt={persona.name}
-                    onError={() => setCharacterImgError(true)}
-                    className="h-56 sm:h-64 w-auto max-w-full object-contain drop-shadow-md select-none transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="py-4">
-                    <Mascot mood="happy" speech={`ยินดีด้วยนะ! นายคือ "${persona.name}" ตัวจริงเสียงจริง!`} />
-                  </div>
-                )}
-              </div>
+            {/* Floating Character Image — Large & Prominent Hero Element */}
+            <div className="relative my-3 flex items-center justify-center min-h-[280px] sm:min-h-[350px]">
+              {characterSrc ? (
+                <img
+                  src={characterSrc}
+                  alt={persona.name}
+                  onError={() => setCharacterImgError(true)}
+                  className="w-full max-w-[300px] sm:max-w-[420px] max-h-[380px] sm:max-h-[460px] object-contain drop-shadow-[0_22px_32px_rgba(0,0,0,0.18)] select-none transition-transform duration-500 hover:scale-105"
+                />
+              ) : (
+                <div className="py-6 scale-125 sm:scale-150">
+                  <Mascot mood="happy" speech={`ยินดีด้วยนะ! นายคือ "${persona.name}" ตัวจริงเสียงจริง!`} />
+                </div>
+              )}
             </div>
 
-            {/* Persona Title */}
-            <h2 className="font-display text-3xl sm:text-4xl font-black text-brown-900 tracking-tight flex items-center justify-center gap-2">
-              <span>{persona.name}</span>
-              <span className="text-2xl sm:text-3xl">{persona.emoji}</span>
-            </h2>
+            {/* Persona Title in Massive Bold Playful Font */}
+            <h1 className="font-display text-4xl sm:text-5xl font-black text-brown-900 tracking-normal whitespace-nowrap text-center drop-shadow-sm">
+              {persona.name} {persona.emoji}
+            </h1>
 
-            {/* Identity Tagline */}
-            <p className="mt-2 text-xs sm:text-sm font-semibold text-brown-600 max-w-md mx-auto leading-relaxed">
-              {persona.tagline}
-            </p>
-
-            {/* Speech bubble badge */}
-            <div className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-sand-100 px-4 py-1.5 text-xs font-bold text-brown-700 shadow-bento-sm">
-              <span className="text-sm">✨</span>
-              <span>จิตวิญญาณนักล่าของอร่อยสาย{persona.name}</span>
+            {/* Brief Engaging Description in Soft Pill Badge */}
+            <div className="mt-3.5 inline-block max-w-xl mx-auto px-2">
+              <div className="rounded-full bg-white/90 backdrop-blur px-5 py-2.5 shadow-bento-sm border border-white/70">
+                <p className="text-xs sm:text-sm font-bold text-brown-700 leading-relaxed text-center">
+                  {persona.tagline}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* ── RADAR CHART & STATS BREAKDOWN (SHIFTED DOWN) ── */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-[28px] bg-white p-5 shadow-bento flex flex-col justify-center border border-sand-100">
-              <p className="mb-2 text-center font-display text-sm font-bold text-brown-900">📊 สเตตัสสายกิน 4 ด้าน</p>
+          {/* ── STATS SECTION (BENTO-BOX STYLE CARDS) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Radar Chart Card */}
+            <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-bento border border-sand-100 flex flex-col items-center justify-center">
+              <h3 className="mb-2 text-center font-display text-base font-bold text-brown-900 whitespace-nowrap">
+                📊 สเตตัสสายกิน 4 ด้าน
+              </h3>
               <Radar stats={stats} fill={persona.bgDeep} />
             </div>
 
-            {/* Strengths / stats bars (Sorted by score, strictly matching persona names) */}
-            <div className="rounded-[28px] bg-white p-5 shadow-bento border border-sand-100 flex flex-col justify-center">
-              <div className="mb-3.5 flex items-center justify-between">
-                <p className="font-display text-sm font-bold text-brown-900">💪 จุดเด่นประจำสายของคุณ</p>
-                <span className="text-[11px] font-medium text-brown-400">สัดส่วนคะแนน</span>
+            {/* Progress Bars Card */}
+            <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-bento border border-sand-100 flex flex-col justify-center">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="font-display text-base font-bold text-brown-900 whitespace-nowrap">
+                  💪 จุดเด่นประจำสายของคุณ
+                </h3>
+                <span className="text-xs font-semibold text-brown-400 whitespace-nowrap">สัดส่วนคะแนน</span>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-3.5">
                 {sortedStats.map((s) => (
-                  <div key={s.key} className="flex items-center gap-2.5 sm:gap-3">
-                    <span className="w-24 sm:w-28 shrink-0 flex items-center gap-1.5 text-xs font-bold text-brown-800">
+                  <div key={s.key} className="flex items-center gap-3">
+                    <span className="min-w-[105px] shrink-0 flex items-center gap-1.5 text-xs font-bold text-brown-800 whitespace-nowrap">
                       <span>{s.emoji}</span>
                       <span>{s.label}</span>
                       {s.isWinner && (
-                        <span className="rounded bg-warm-100 px-1 py-0.5 text-[9px] font-extrabold text-terracotta-600">
+                        <span className="rounded bg-warm-100 px-1.5 py-0.5 text-[9px] font-extrabold text-terracotta-600 whitespace-nowrap">
                           ★ สายคุณ
                         </span>
                       )}
@@ -215,7 +227,7 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
                         style={{ width: `${Math.max(s.value, 6)}%` }}
                       />
                     </div>
-                    <span className={`w-12 shrink-0 text-right font-mono text-xs font-bold ${s.isWinner ? 'text-terracotta-600 font-extrabold text-sm' : 'text-brown-700'}`}>
+                    <span className={`w-12 shrink-0 text-right font-mono text-xs font-bold whitespace-nowrap ${s.isWinner ? 'text-terracotta-600 font-extrabold text-sm' : 'text-brown-700'}`}>
                       {s.value}%
                     </span>
                   </div>
@@ -224,56 +236,58 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             </div>
           </div>
 
-          {/* ── GAMIFIED TROPHY CASE & BADGES (SHIFTED DOWN) ── */}
-          <div className="rounded-[28px] bg-white p-5 shadow-bento border border-sand-100">
-            <div className="flex items-center justify-between border-b border-sand-100 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-warm-100 text-warm-600">
+          {/* ── GAMIFIED TROPHY CASE & BADGES (BENTO-BOX ROUNDED-3XL) ── */}
+          <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-bento border border-sand-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-sand-100 pb-3 gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-warm-100 text-warm-600">
                   <Trophy className="h-4 w-4" />
                 </span>
                 <div>
-                  <h4 className="font-display text-sm font-bold text-brown-900">Trophy Case — เหรียญรางวัลที่ปลดล็อก</h4>
-                  <p className="text-[11px] text-brown-400">ตอบครบ 5 ข้อ ปลดล็อกความสำเร็จนักชิม</p>
+                  <h4 className="font-display text-sm font-bold text-brown-900 whitespace-nowrap">
+                    Trophy Case — เหรียญรางวัลที่ปลดล็อก
+                  </h4>
+                  <p className="text-[11px] text-brown-400 whitespace-nowrap">ตอบครบ 5 ข้อ ปลดล็อกความสำเร็จนักชิม</p>
                 </div>
               </div>
-              <span className="rounded-full bg-sand-100 px-3 py-1 font-display text-xs font-extrabold text-brown-700">
+              <span className="self-start sm:self-center rounded-full bg-sand-100 px-3.5 py-1 font-display text-xs font-extrabold text-brown-700 whitespace-nowrap">
                 +500 EXP ⭐
               </span>
             </div>
 
             {/* Badges Grid */}
-            <div className="mt-4 grid grid-cols-4 gap-2.5 sm:gap-3">
-              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-3 text-center border border-sand-100 transition hover:scale-105">
+            <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
+              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-2.5 sm:p-3 text-center border border-sand-100 transition hover:scale-105">
                 <span className="text-2xl mb-1">🎖️</span>
-                <span className="text-[11px] font-bold text-brown-800 line-clamp-1">Rookie</span>
-                <span className="text-[9px] text-brown-400">ตอบข้อแรก</span>
+                <span className="text-[11px] font-bold text-brown-800 whitespace-nowrap">Rookie</span>
+                <span className="text-[9px] text-brown-400 whitespace-nowrap">ตอบข้อแรก</span>
               </div>
 
-              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-3 text-center border border-sand-100 transition hover:scale-105">
+              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-2.5 sm:p-3 text-center border border-sand-100 transition hover:scale-105">
                 <span className="text-2xl mb-1">🔥</span>
-                <span className="text-[11px] font-bold text-brown-800 line-clamp-1">5-Combo</span>
-                <span className="text-[9px] text-brown-400">สตรีคครบ 5</span>
+                <span className="text-[11px] font-bold text-brown-800 whitespace-nowrap">5-Combo</span>
+                <span className="text-[9px] text-brown-400 whitespace-nowrap">สตรีคครบ 5</span>
               </div>
 
-              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-3 text-center border border-sand-100 transition hover:scale-105">
+              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-2.5 sm:p-3 text-center border border-sand-100 transition hover:scale-105">
                 <span className="text-2xl mb-1">{persona.emoji}</span>
-                <span className="text-[11px] font-bold text-brown-800 line-clamp-1">{persona.name}</span>
-                <span className="text-[9px] text-brown-400">ตราประจำสาย</span>
+                <span className="text-[11px] font-bold text-brown-800 whitespace-nowrap">{persona.name}</span>
+                <span className="text-[9px] text-brown-400 whitespace-nowrap">ตราประจำสาย</span>
               </div>
 
-              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-3 text-center border border-sand-100 transition hover:scale-105">
+              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-2.5 sm:p-3 text-center border border-sand-100 transition hover:scale-105">
                 <span className="text-2xl mb-1">👑</span>
-                <span className="text-[11px] font-bold text-brown-800 line-clamp-1">Lv.2 Hunter</span>
-                <span className="text-[9px] text-brown-400">ปลดล็อกสำเร็จ</span>
+                <span className="text-[11px] font-bold text-brown-800 whitespace-nowrap">Lv.2 Hunter</span>
+                <span className="text-[9px] text-brown-400 whitespace-nowrap">ปลดล็อกสำเร็จ</span>
               </div>
             </div>
 
             {/* Level Progress */}
             <div className="mt-4 pt-3 border-t border-sand-100 flex items-center justify-between text-xs font-bold text-brown-600">
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 whitespace-nowrap">
                 <Award className="h-4 w-4 text-warm-500" /> ระดับ: นักล่าของอร่อยตลาดพลู (Lv. 2)
               </span>
-              <span className="text-[11px] text-brown-400">500 / 1,000 EXP</span>
+              <span className="text-[11px] text-brown-400 font-mono">500 / 1,000 EXP</span>
             </div>
             <div className="mt-2 h-2 rounded-full bg-sand-100 overflow-hidden">
               <div className="h-full rounded-full bg-gradient-to-r from-warm-400 to-terracotta-500 w-1/2" />
@@ -281,25 +295,25 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           </div>
         </div>
 
-        {/* ── ACTION BUTTONS ── */}
-        <div className="mt-5 space-y-3">
-          {/* Export / Share as Image Button */}
+        {/* ── ACTION BUTTONS: PROMINENT BRIGHTLY COLORED SHARE TO IG STORY ── */}
+        <div className="mt-6 space-y-3 max-w-md mx-auto">
+          {/* Prominent Brightly Colored Share to IG Story Pill Button */}
           <button
             type="button"
             onClick={handleExportImage}
             disabled={exporting}
-            className="flex w-full items-center justify-center gap-2 rounded-[40px] bg-brown-700 py-4 font-display text-base font-bold text-cream-50 shadow-bento-lg transition hover:bg-brown-900 active:scale-[0.98] disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 py-4 px-6 font-display text-base font-black text-white shadow-bento-lg transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
           >
             {exporting ? (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
-                กำลังสร้างรูปภาพ...
+                กำลังสร้างรูปภาพ IG Story...
               </>
             ) : (
               <>
                 <Share2 className="h-5 w-5" aria-hidden="true" />
                 <Download className="h-4 w-4" />
-                แชร์ / บันทึกผลลัพธ์เป็นภาพ
+                📸 Share to IG Story / บันทึกภาพ
               </>
             )}
           </button>
@@ -308,13 +322,13 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           <button
             type="button"
             onClick={onRestart}
-            className="flex w-full items-center justify-center gap-2 rounded-[40px] border border-sand-300 bg-white py-3.5 font-display text-sm font-bold text-brown-700 shadow-bento-sm transition hover:bg-sand-100 active:scale-[0.98]"
+            className="flex w-full items-center justify-center gap-2 rounded-full border border-sand-300 bg-white py-3.5 font-display text-sm font-bold text-brown-700 shadow-bento-sm transition hover:bg-sand-100 active:scale-[0.98]"
           >
             <RotateCcw className="h-4 w-4" aria-hidden="true" /> ทำควิซใหม่อีกครั้ง
           </button>
         </div>
 
-        {/* ── Recommended shops — swipeable carousel ── */}
+        {/* ── RECOMMENDED SHOPS (SWIPEABLE HORIZONTAL CAROUSEL) ── */}
         <div className="mt-8">
           <div className="mb-1 flex items-end justify-between">
             <h3 className="font-display text-xl font-bold text-brown-900">🍜 ร้านแนะนำสำหรับ{persona.name}</h3>
@@ -329,7 +343,7 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           </div>
         </div>
 
-        {/* ── Illustrated Map Section (data_pic overview map) ── */}
+        {/* ── MAP PLACEHOLDER SECTION ── */}
         <div className="mt-8">
           <div className="mb-1 flex items-end justify-between">
             <h3 className="font-display text-xl font-bold text-brown-900">🗺️ แผนที่ภาพรวมย่านตลาดพลู</h3>
@@ -339,20 +353,23 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             แผนที่ท่องเที่ยวและจุดปักหมุดร้านเด็ดรอบสถานีรถไฟตลาดพลู
           </p>
 
-          <div className="overflow-hidden rounded-[28px] bg-white p-3 shadow-bento border border-sand-100">
+          <div className="overflow-hidden rounded-3xl bg-white p-3 shadow-bento border border-sand-100">
             {/* Clickable Map Picture -> Directly opens Google Maps */}
             <a
               href="https://www.google.com/maps/search/?api=1&query=%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%9E%E0%B8%A5%E0%B8%B9"
               target="_blank"
               rel="noopener noreferrer"
               title="คลิกที่ภาพเพื่อเปิดแผนที่ตลาดพลูบน Google Maps"
-              className="group relative block overflow-hidden rounded-[20px] bg-sand-100 cursor-pointer"
+              className="group relative block overflow-hidden rounded-2xl bg-sand-100 cursor-pointer"
             >
               <img
-                src="/images/talat-phlu-map.jpg"
-                alt="แผนที่ภาพรวมย่านตลาดพลู (คลิกเพื่อเปิด Google Maps)"
-                loading="lazy"
-                className="w-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
+                src="/images/talad_plu_map.png"
+                data-src="E:\Tarket Talad Plu\data_pic\talad_plu_map.png"
+                onError={(e) => {
+                  e.currentTarget.src = "/images/talat-phlu-map.jpg"
+                }}
+                alt="Talat Phlu Map"
+                className="w-full rounded-3xl object-cover transition-transform duration-300 group-hover:scale-[1.02]"
               />
 
               {/* Hover / Tap Overlay Prompt */}
@@ -427,9 +444,10 @@ function Radar({ stats, fill }) {
               y={ly}
               textAnchor="middle"
               dominantBaseline="central"
-              className={`text-[10px] font-display font-bold ${
-                s.isWinner ? 'fill-terracotta-600 font-extrabold' : 'fill-brown-600'
-              }`}
+              fontSize="11"
+              fontFamily="'Kanit', 'Noto Sans Thai', sans-serif"
+              fontWeight={s.isWinner ? '800' : '700'}
+              fill={s.isWinner ? '#c2410c' : '#4a3527'}
             >
               {s.emoji} {s.label}
             </text>
