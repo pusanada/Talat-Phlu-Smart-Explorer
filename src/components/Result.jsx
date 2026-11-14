@@ -50,6 +50,66 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
   // Sort stats descending for the strength list so the winning persona is #1
   const sortedStats = [...stats].sort((a, b) => b.value - a.value)
 
+  // ── Calculate the 4 Gamified Badges ──
+  const winnerScore = tally[persona.key] || 0
+
+  // 1. ความผูกพันกับตลาดพลู (Rookie เริ่มรักตลาดพลู -> Master แฟนพันธุ์แท้ตลาดพลู ตามคะแนน)
+  let affiliationBadge
+  if (winnerScore >= 12) {
+    affiliationBadge = { icon: '🏆', title: 'Master', subtitle: 'แฟนพันธุ์แท้ตลาดพลู' }
+  } else if (winnerScore >= 9) {
+    affiliationBadge = { icon: '🥇', title: 'Expert', subtitle: 'เซียนตลาดพลู' }
+  } else if (winnerScore >= 6) {
+    affiliationBadge = { icon: '🧭', title: 'Explorer', subtitle: 'นักสำรวจตลาดพลู' }
+  } else {
+    affiliationBadge = { icon: '🔰', title: 'Rookie', subtitle: 'เริ่มรักตลาดพลู' }
+  }
+
+  // 2. ตราประจำสาย (เปลี่ยนตามสายที่ได้)
+  const personaBadge = {
+    icon: persona.emoji,
+    title: persona.name,
+    subtitle: 'ตราประจำสาย',
+  }
+
+  // 3. นักล่าของกิน Lv. ต่างๆ ตามคะแนน (มี 1-5)
+  let hunterLevel = 1
+  if (winnerScore >= 13) hunterLevel = 5
+  else if (winnerScore >= 10) hunterLevel = 4
+  else if (winnerScore >= 7) hunterLevel = 3
+  else if (winnerScore >= 4) hunterLevel = 2
+  else hunterLevel = 1
+
+  const hunterIcons = {
+    5: '👑',
+    4: '💎',
+    3: '🔥',
+    2: '🏹',
+    1: '🌱',
+  }
+  const hunterBadge = {
+    icon: hunterIcons[hunterLevel],
+    title: `Lv.${hunterLevel} Hunter`,
+    subtitle: `นักล่าของกิน Lv.${hunterLevel}`,
+  }
+
+  const expPoints = hunterLevel * 200
+  const expPercent = hunterLevel * 20
+
+  // 4. บัดเจต (เช่น เน้นคุม, เน้นคุณภาพ) ตามคำถาม / คำตอบ
+  let budgetBadge
+  if (tally.street > (tally.healthy || 0) && tally.street >= (tally.sweet || 0) && tally.street >= (tally.chill || 0)) {
+    budgetBadge = { icon: '🪙', title: 'เน้นคุมงบ', subtitle: 'อร่อยสบายกระเป๋า' }
+  } else if (tally.healthy > (tally.street || 0) && tally.healthy >= (tally.sweet || 0) && tally.healthy >= (tally.chill || 0)) {
+    budgetBadge = { icon: '✨', title: 'เน้นคุณภาพ', subtitle: 'คัดสรรเกรดพรีเมียม' }
+  } else if (tally.chill > (tally.street || 0) && tally.chill >= (tally.healthy || 0) && tally.chill >= (tally.sweet || 0)) {
+    budgetBadge = { icon: '☕', title: 'เน้นบรรยากาศ', subtitle: 'ความชิลนำราคา' }
+  } else {
+    budgetBadge = { icon: '🎯', title: 'เน้นคุ้มค่า', subtitle: 'อิ่มอร่อยจัดเต็ม' }
+  }
+
+  const badges = [affiliationBadge, personaBadge, hunterBadge, budgetBadge]
+
   const handleExportImage = async () => {
     const targetNode = exportCardRef.current || cardRef.current
     if (!targetNode || exporting) return
@@ -259,42 +319,32 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
               </span>
             </div>
 
-            {/* Badges Grid */}
+            {/* Badges Grid (4 Badges: Affiliation, Persona, Hunter Level, Budget) */}
             <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
-              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-2.5 sm:p-3 text-center border border-sand-100 transition hover:scale-105">
-                <span className="text-2xl mb-1">🎖️</span>
-                <span className="text-[11px] font-bold text-brown-800 whitespace-nowrap">Rookie</span>
-                <span className="text-[9px] text-brown-400 whitespace-nowrap">ตอบข้อแรก</span>
-              </div>
-
-              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-2.5 sm:p-3 text-center border border-sand-100 transition hover:scale-105">
-                <span className="text-2xl mb-1">🔥</span>
-                <span className="text-[11px] font-bold text-brown-800 whitespace-nowrap">5-Combo</span>
-                <span className="text-[9px] text-brown-400 whitespace-nowrap">สตรีคครบ 5</span>
-              </div>
-
-              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-2.5 sm:p-3 text-center border border-sand-100 transition hover:scale-105">
-                <span className="text-2xl mb-1">{persona.emoji}</span>
-                <span className="text-[11px] font-bold text-brown-800 whitespace-nowrap">{persona.name}</span>
-                <span className="text-[9px] text-brown-400 whitespace-nowrap">ตราประจำสาย</span>
-              </div>
-
-              <div className="flex flex-col items-center rounded-2xl bg-sand-50 p-2.5 sm:p-3 text-center border border-sand-100 transition hover:scale-105">
-                <span className="text-2xl mb-1">👑</span>
-                <span className="text-[11px] font-bold text-brown-800 whitespace-nowrap">Lv.2 Hunter</span>
-                <span className="text-[9px] text-brown-400 whitespace-nowrap">ปลดล็อกสำเร็จ</span>
-              </div>
+              {badges.map((b, i) => (
+                <div
+                  key={i}
+                  className="flex flex-col items-center rounded-2xl bg-sand-50 p-2 sm:p-2.5 text-center border border-sand-100 transition hover:scale-105"
+                >
+                  <span className="text-2xl mb-1">{b.icon}</span>
+                  <span className="text-[11px] font-bold text-brown-800 line-clamp-1">{b.title}</span>
+                  <span className="text-[9px] text-brown-400 line-clamp-1">{b.subtitle}</span>
+                </div>
+              ))}
             </div>
 
             {/* Level Progress */}
             <div className="mt-4 pt-3 border-t border-sand-100 flex items-center justify-between text-xs font-bold text-brown-600">
               <span className="flex items-center gap-1.5 whitespace-nowrap">
-                <Award className="h-4 w-4 text-warm-500" /> ระดับ: นักล่าของอร่อยตลาดพลู (Lv. 2)
+                <Award className="h-4 w-4 text-warm-500" /> ระดับ: นักล่าของอร่อยตลาดพลู (Lv. {hunterLevel})
               </span>
-              <span className="text-[11px] text-brown-400 font-mono">500 / 1,000 EXP</span>
+              <span className="text-[11px] text-brown-400 font-mono">{expPoints} / 1,000 EXP</span>
             </div>
             <div className="mt-2 h-2 rounded-full bg-sand-100 overflow-hidden">
-              <div className="h-full rounded-full bg-gradient-to-r from-warm-400 to-terracotta-500 w-1/2" />
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-warm-400 to-terracotta-500 transition-all duration-700"
+                style={{ width: `${expPercent}%` }}
+              />
             </div>
           </div>
         </div>
@@ -532,26 +582,13 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
               </span>
             </div>
             <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
-                <span className="text-base">🎖️</span>
-                <p className="text-[9.5px] font-bold text-brown-800">Rookie</p>
-                <p className="text-[8px] text-brown-400">ตอบข้อแรก</p>
-              </div>
-              <div className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
-                <span className="text-base">🔥</span>
-                <p className="text-[9.5px] font-bold text-brown-800">5-Combo</p>
-                <p className="text-[8px] text-brown-400">สตรีคครบ 5</p>
-              </div>
-              <div className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
-                <span className="text-base">{persona.emoji}</span>
-                <p className="text-[9.5px] font-bold text-brown-800">{persona.name}</p>
-                <p className="text-[8px] text-brown-400">ตราประจำสาย</p>
-              </div>
-              <div className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
-                <span className="text-base">👑</span>
-                <p className="text-[9.5px] font-bold text-brown-800">Lv.2 Hunter</p>
-                <p className="text-[8px] text-brown-400">ปลดล็อกสำเร็จ</p>
-              </div>
+              {badges.map((b, i) => (
+                <div key={i} className="rounded-xl bg-sand-50 p-1.5 border border-sand-100">
+                  <span className="text-base">{b.icon}</span>
+                  <p className="text-[9.5px] font-bold text-brown-800 truncate">{b.title}</p>
+                  <p className="text-[8px] text-brown-400 truncate">{b.subtitle}</p>
+                </div>
+              ))}
             </div>
           </div>
 
