@@ -22,6 +22,9 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
   const cardRef = useRef(null)
   const [exporting, setExporting] = useState(false)
   const [toast, setToast] = useState('')
+  const [characterImgError, setCharacterImgError] = useState(false)
+
+  const characterSrc = !characterImgError && (persona.characterImage || (persona.key === 'sweet' ? '/images/character-sweet.png' : null))
 
   // Normalize tallies to 0–100% (max per key = 5 questions × 3 pts = 15 pts)
   const stats = AXES.map((ax) => {
@@ -120,25 +123,108 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             <span className="font-mono uppercase tracking-wider text-[10px]">Talat Phlu Smart Explorer</span>
           </div>
 
-          {/* Persona header — soft stat-card banner */}
-          <div className="mx-auto max-w-md rounded-[40px] bg-white p-2 shadow-bento-lg">
+          {/* ── HERO CHARACTER SHOWCASE (CENTERED) ── */}
+          <div className="mx-auto max-w-lg rounded-[36px] bg-white p-5 sm:p-7 shadow-bento-lg border border-sand-100 text-center relative overflow-hidden">
+            {/* Ambient Aura Background */}
             <div
-              className="rounded-[32px] px-4 py-5 text-center"
+              className="absolute -top-20 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full blur-3xl opacity-35 pointer-events-none"
               style={{ backgroundColor: persona.bgDeep }}
+            />
+
+            {/* Badge: YOU ARE */}
+            <div
+              className="relative inline-flex items-center gap-1.5 rounded-full px-4 py-1 text-[11px] font-black uppercase tracking-[0.25em] shadow-sm border border-sand-200"
+              style={{ backgroundColor: persona.bgDeep, color: persona.ink }}
             >
-              <p className="font-display text-[11px] font-extrabold uppercase tracking-[0.3em]" style={{ color: persona.ink }}>
-                ★ You Are ★
-              </p>
-              <h2 className="mt-1.5 font-display text-4xl font-extrabold leading-tight text-brown-900">
-                {persona.name}
-              </h2>
-              <p className="mt-1 font-display text-xs font-semibold text-brown-700">
-                {persona.emoji} อาหารคือชีวิต จิตวิญญาณคนตลาดพลู
-              </p>
+              <span>★</span>
+              <span>YOU ARE</span>
+              <span>★</span>
+            </div>
+
+            {/* Centered Character Figure */}
+            <div className="relative my-4 flex items-center justify-center">
+              <div
+                className="relative flex items-center justify-center rounded-[32px] p-4 transition-transform duration-300 hover:scale-[1.02] shadow-inner max-w-xs w-full"
+                style={{ backgroundColor: `${persona.bgDeep}40` }}
+              >
+                {characterSrc ? (
+                  <img
+                    src={characterSrc}
+                    alt={persona.name}
+                    onError={() => setCharacterImgError(true)}
+                    className="h-56 sm:h-64 w-auto max-w-full object-contain drop-shadow-md select-none transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="py-4">
+                    <Mascot mood="happy" speech={`ยินดีด้วยนะ! นายคือ "${persona.name}" ตัวจริงเสียงจริง!`} />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Persona Title */}
+            <h2 className="font-display text-3xl sm:text-4xl font-black text-brown-900 tracking-tight flex items-center justify-center gap-2">
+              <span>{persona.name}</span>
+              <span className="text-2xl sm:text-3xl">{persona.emoji}</span>
+            </h2>
+
+            {/* Identity Tagline */}
+            <p className="mt-2 text-xs sm:text-sm font-semibold text-brown-600 max-w-md mx-auto leading-relaxed">
+              {persona.tagline}
+            </p>
+
+            {/* Speech bubble badge */}
+            <div className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-sand-100 px-4 py-1.5 text-xs font-bold text-brown-700 shadow-bento-sm">
+              <span className="text-sm">✨</span>
+              <span>จิตวิญญาณนักล่าของอร่อยสาย{persona.name}</span>
             </div>
           </div>
 
-          {/* Gamified Trophy Case & Explorer Badges */}
+          {/* ── RADAR CHART & STATS BREAKDOWN (SHIFTED DOWN) ── */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-[28px] bg-white p-5 shadow-bento flex flex-col justify-center border border-sand-100">
+              <p className="mb-2 text-center font-display text-sm font-bold text-brown-900">📊 สเตตัสสายกิน 4 ด้าน</p>
+              <Radar stats={stats} fill={persona.bgDeep} />
+            </div>
+
+            {/* Strengths / stats bars (Sorted by score, strictly matching persona names) */}
+            <div className="rounded-[28px] bg-white p-5 shadow-bento border border-sand-100 flex flex-col justify-center">
+              <div className="mb-3.5 flex items-center justify-between">
+                <p className="font-display text-sm font-bold text-brown-900">💪 จุดเด่นประจำสายของคุณ</p>
+                <span className="text-[11px] font-medium text-brown-400">สัดส่วนคะแนน</span>
+              </div>
+              <div className="space-y-3">
+                {sortedStats.map((s) => (
+                  <div key={s.key} className="flex items-center gap-2.5 sm:gap-3">
+                    <span className="w-24 sm:w-28 shrink-0 flex items-center gap-1.5 text-xs font-bold text-brown-800">
+                      <span>{s.emoji}</span>
+                      <span>{s.label}</span>
+                      {s.isWinner && (
+                        <span className="rounded bg-warm-100 px-1 py-0.5 text-[9px] font-extrabold text-terracotta-600">
+                          ★ สายคุณ
+                        </span>
+                      )}
+                    </span>
+                    <div className="h-4 flex-1 overflow-hidden rounded-full bg-sand-100">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${
+                          s.isWinner
+                            ? 'bg-gradient-to-r from-warm-400 to-terracotta-500 shadow-sm'
+                            : 'bg-sand-300'
+                        }`}
+                        style={{ width: `${Math.max(s.value, 6)}%` }}
+                      />
+                    </div>
+                    <span className={`w-12 shrink-0 text-right font-mono text-xs font-bold ${s.isWinner ? 'text-terracotta-600 font-extrabold text-sm' : 'text-brown-700'}`}>
+                      {s.value}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── GAMIFIED TROPHY CASE & BADGES (SHIFTED DOWN) ── */}
           <div className="rounded-[28px] bg-white p-5 shadow-bento border border-sand-100">
             <div className="flex items-center justify-between border-b border-sand-100 pb-3">
               <div className="flex items-center gap-2">
@@ -192,65 +278,6 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             <div className="mt-2 h-2 rounded-full bg-sand-100 overflow-hidden">
               <div className="h-full rounded-full bg-gradient-to-r from-warm-400 to-terracotta-500 w-1/2" />
             </div>
-          </div>
-
-          {/* Visual card + Radar chart */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-[28px] bg-white p-5 shadow-bento flex flex-col items-center justify-center">
-              <Mascot mood="happy" speech={`ยินดีด้วยนะ! นายคือ "${persona.name}" ตัวจริงเสียงจริง!`} />
-              <p className="mt-3 text-center text-[11px] font-bold uppercase tracking-widest text-brown-400">
-                {persona.name} สไตล์นักชิมตลาดพลู
-              </p>
-            </div>
-
-            <div className="rounded-[28px] bg-white p-5 shadow-bento flex flex-col justify-center">
-              <p className="mb-1 text-center font-display text-sm font-bold text-brown-900">📊 สเตตัสสายกิน 4 ด้าน</p>
-              <Radar stats={stats} fill={persona.bgDeep} />
-            </div>
-          </div>
-
-          {/* Strengths / stats bars (Sorted by score, strictly matching persona names) */}
-          <div className="rounded-[28px] bg-white p-5 shadow-bento">
-            <div className="mb-3.5 flex items-center justify-between">
-              <p className="font-display text-sm font-bold text-brown-900">💪 จุดเด่นประจำสายของคุณ</p>
-              <span className="text-[11px] font-medium text-brown-400">สัดส่วนคะแนนที่ตรงกับตัวตน</span>
-            </div>
-            <div className="space-y-3">
-              {sortedStats.map((s) => (
-                <div key={s.key} className="flex items-center gap-2.5 sm:gap-3">
-                  <span className="w-24 sm:w-28 shrink-0 flex items-center gap-1.5 text-xs font-bold text-brown-800">
-                    <span>{s.emoji}</span>
-                    <span>{s.label}</span>
-                    {s.isWinner && (
-                      <span className="rounded bg-warm-100 px-1 py-0.5 text-[9px] font-extrabold text-terracotta-600">
-                        ★ สายคุณ
-                      </span>
-                    )}
-                  </span>
-                  <div className="h-4 flex-1 overflow-hidden rounded-full bg-sand-100">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${
-                        s.isWinner
-                          ? 'bg-gradient-to-r from-warm-400 to-terracotta-500 shadow-sm'
-                          : 'bg-sand-300'
-                      }`}
-                      style={{ width: `${Math.max(s.value, 6)}%` }}
-                    />
-                  </div>
-                  <span className={`w-12 shrink-0 text-right font-mono text-xs font-bold ${s.isWinner ? 'text-terracotta-600 font-extrabold text-sm' : 'text-brown-700'}`}>
-                    {s.value}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Tagline */}
-          <div className="rounded-[28px] bg-white p-5 shadow-bento">
-            <p className="flex items-start gap-2 text-sm font-semibold leading-relaxed text-brown-700">
-              <Trophy className="mt-0.5 h-4 w-4 shrink-0 text-warm-500" aria-hidden="true" />
-              {persona.tagline}
-            </p>
           </div>
         </div>
 

@@ -8,6 +8,7 @@ export const PERSONAS = {
     name: 'สายหวาน',
     emoji: '🍰',
     tagline: 'ทุกมื้อต้องปิดท้ายด้วยของหวาน รสหวานมันระดับตำนานตลาดพลูคือคู่ใจคุณ',
+    characterImage: '/images/character-sweet.png',
     bg: '#F6E3EA', // muted dusty pink
     bgDeep: '#E8B7C8',
     ink: '#6E3247',
@@ -17,6 +18,7 @@ export const PERSONAS = {
     name: 'สายสตรีท',
     emoji: '🍢',
     tagline: 'ล่าของอร่อยริมทาง ราคาเข้าถึงได้ รสแซ่บจัดเต็มแบบคนเมืองของแท้',
+    characterImage: '/images/character-street.png',
     bg: '#F7EDD3', // muted sand yellow
     bgDeep: '#EDDCA0',
     ink: '#6E5518',
@@ -26,6 +28,7 @@ export const PERSONAS = {
     name: 'สายชิล',
     emoji: '🧋',
     tagline: 'จิบช้า ๆ นั่งริมคลองบางกอกใหญ่ ดูรถไฟผ่าน ชีวิตดีได้โดยไม่ต้องรีบ',
+    characterImage: '/images/character-chill.png',
     bg: '#E4EEF3', // muted dusty blue
     bgDeep: '#BFD8E4',
     ink: '#274B5E',
@@ -35,6 +38,7 @@ export const PERSONAS = {
     name: 'สายเฮลตี้',
     emoji: '🥗',
     tagline: 'อร่อยได้โดยไม่ต้องหนัก สลัด ยำ ผลไม้ปั่น คือเส้นทางสุขภาพของคุณในตลาดพลู',
+    characterImage: '/images/character-healthy.png',
     bg: '#E7F0E0', // muted sage green
     bgDeep: '#C5DDB4',
     ink: '#3B5A33',
