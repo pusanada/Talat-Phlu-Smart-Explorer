@@ -347,6 +347,18 @@ export default function App() {
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
 
+      {/* ── Floating AI Chatbot Guru Button (Quick Access) ── */}
+      <button
+        type="button"
+        onClick={() => setAiModalOpen(true)}
+        aria-label="เปิดแชทบอทกูรูนักกินตลาดพลู AI"
+        className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-r from-warm-500 via-terracotta-500 to-amber-500 p-2.5 sm:px-4 sm:py-2.5 text-white shadow-bento-lg transition-transform hover:scale-105 active:scale-95 border-2 border-white/80"
+        title="ถามกูรูนักกินตลาดพลู AI (Gemini 2.5)"
+      >
+        <span className="text-lg select-none">🍧</span>
+        <span className="hidden sm:inline text-xs font-black tracking-wide">ถามกูรู AI</span>
+      </button>
+
       <AuthModal
         open={authModal.open}
         initialMode={authModal.mode}

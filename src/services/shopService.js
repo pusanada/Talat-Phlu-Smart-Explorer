@@ -119,7 +119,7 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_08',
     name: 'MATCHAMA (มัทฉะมะ)',
-    image: null,
+    image: '/images/shops/matchama.jpg',
     video: null,
     signature_menu: 'มัทฉะเกรดพิธีการเข้มข้น & ไอศกรีมมัทฉะ',
     story: 'สวรรค์ของคนรักมัทฉะแท้จากญี่ปุ่น ชงสดแก้วต่อแก้ว หอมละมุนเข้มข้น',
