@@ -1,0 +1,48 @@
+import { BookOpen, MapPin, UtensilsCrossed } from 'lucide-react'
+
+/**
+ * Swipeable soft card — used in the Quiz result carousel
+ * (the Shops Directory uses the video feed card instead).
+ */
+export default function ShopCard({ shop, accent = '#c2543a' }) {
+  // If map_link is an example or empty, dynamically route to real Google Maps search
+  const mapUrl =
+    shop.map_link && !shop.map_link.includes('example')
+      ? shop.map_link
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${shop.name || ''} ตลาดพลู`)}`
+
+  return (
+    <article className="w-72 shrink-0 snap-start overflow-hidden rounded-[28px] bg-white shadow-bento transition-transform duration-200 active:scale-[0.98] sm:w-80">
+      <div className="relative h-40 overflow-hidden bg-sand-100 sm:h-44">
+        <img src={shop.image} alt={shop.name} loading="lazy" className="h-full w-full object-cover" />
+        <span className="absolute left-3 top-3 rounded-full bg-white/85 px-3 py-1 text-[10px] font-bold text-brown-700 backdrop-blur">
+          {shop.category}
+        </span>
+      </div>
+
+      <div className="space-y-2.5 p-4">
+        <h3 className="font-display text-base font-bold leading-snug text-brown-900">{shop.name}</h3>
+
+        <p className="flex items-start gap-1.5 text-sm font-semibold" style={{ color: accent }}>
+          <UtensilsCrossed className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="line-clamp-1">{shop.signature_menu}</span>
+        </p>
+
+        <p className="flex items-start gap-1.5 text-xs font-medium leading-relaxed text-brown-500">
+          <BookOpen className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="line-clamp-2">{shop.story}</span>
+        </p>
+
+        <a
+          href={mapUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 flex w-full items-center justify-center gap-2 rounded-[40px] bg-terracotta-500 py-3 font-display text-sm font-bold text-white shadow-bento-sm transition hover:bg-terracotta-600 active:scale-[0.97]"
+        >
+          <MapPin className="h-4 w-4" aria-hidden="true" />
+          ไปดูแผนที่ (Google Maps)
+        </a>
+      </div>
+    </article>
+  )
+}

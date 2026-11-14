@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Noto Sans Thai", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Kanit", "Noto Sans Thai", ui-sans-serif, sans-serif;
+
+  /* ── Bento Box palette: warm cream base, appetizing accents ── */
+  --color-cream-50: #fffbf5;
+  --color-cream-100: #fff7ed;
+  --color-sand-100: #f8ecda;
+  --color-sand-200: #f1dfc3;
+  --color-sand-300: #e6cd9f;
+
+  --color-terracotta-100: #fbe3dc;
+  --color-terracotta-300: #e79b83;
+  --color-terracotta-400: #d97555;
+  --color-terracotta-500: #c2543a;
+  --color-terracotta-600: #a8422c;
+
+  --color-warm-100: #fdeeda;
+  --color-warm-400: #efa94a;
+  --color-warm-500: #e8913f;
+  --color-warm-600: #d17a2b;
+
+  --color-mustard-300: #f6d875;
+  --color-mustard-400: #f3c53d;
+
+  --color-sage-100: #eaf2e4;
+  --color-sage-400: #9dbb8d;
+  --color-sage-500: #7ba05b;
+
+  --color-brown-100: #efe4d7;
+  --color-brown-200: #ddcbb5;
+  --color-brown-300: #c9b39d;
+  --color-brown-500: #6b4f3a;
+  --color-brown-700: #4a3527;
+  --color-brown-900: #35251b;
+
+  /* ── Soft diffused shadows (no hard borders) ── */
+  --shadow-bento-sm: 0 4px 14px -6px rgb(74 53 39 / 0.14);
+  --shadow-bento: 0 10px 30px -12px rgb(74 53 39 / 0.18);
+  --shadow-bento-lg: 0 18px 45px -12px rgb(74 53 39 / 0.25);
+
+  --animate-view: view-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-pop: pop-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shake: shake 0.4s ease-in-out both;
+
+  @keyframes view-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-7px);
+    }
+    50% {
+      transform: translateX(7px);
+    }
+    75% {
+      transform: translateX(-4px);
+    }
+  }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-cream-100 text-brown-900 font-sans antialiased;
+}
+
+/* Hide scrollbar for horizontal swipe carousels */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe-area padding for notched phones */
+.safe-bottom {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+}
