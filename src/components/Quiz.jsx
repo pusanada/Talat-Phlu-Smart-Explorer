@@ -168,19 +168,7 @@ export default function Quiz({ answers = [], onChange, onFinish, questions = [],
       </div>
 
       {/* ── Question Card ── */}
-      <div key={q.id} className="animate-pop rounded-[28px] bg-white p-5 shadow-bento border border-sand-100">
-        {/* Question Image (if provided) */}
-        {q.image && (
-          <div className="mb-4 overflow-hidden rounded-2xl bg-sand-100 shadow-bento-sm">
-            <img
-              src={q.image}
-              alt={q.question}
-              loading="lazy"
-              className="aspect-[16/9] max-h-56 w-full object-cover transition-transform duration-500 hover:scale-[1.02]"
-            />
-          </div>
-        )}
-
+      <div key={q.id} className="animate-pop rounded-[28px] bg-white p-5 sm:p-6 shadow-bento border border-sand-100">
         <div className="flex items-center gap-2.5">
           <span className="text-3xl">{q.emoji}</span>
           <h3 className="font-display text-xl font-bold leading-snug text-brown-900">{q.question}</h3>
@@ -196,38 +184,22 @@ export default function Quiz({ answers = [], onChange, onFinish, questions = [],
                 key={opt.label || i}
                 type="button"
                 onClick={() => pick(i)}
-                className={`group flex w-full items-center gap-3 rounded-2xl p-3.5 text-left transition-all duration-200 active:scale-[0.97] ${
+                className={`group flex w-full items-center gap-3.5 rounded-2xl p-4 text-left transition-all duration-200 active:scale-[0.98] ${
                   active
                     ? 'bg-gradient-to-r from-terracotta-500 to-warm-500 text-cream-50 shadow-bento ring-2 ring-terracotta-400/50'
                     : 'border border-sand-200 bg-cream-50 text-brown-700 shadow-bento-sm hover:-translate-y-0.5 hover:border-warm-300 hover:shadow-bento'
                 }`}
               >
-                {/* Option Image Thumbnail or Emoji */}
-                {opt.image ? (
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-sand-100 shadow-sm transition-transform group-hover:scale-105">
-                    <img
-                      src={opt.image}
-                      alt={opt.label}
-                      loading="lazy"
-                      className="h-full w-full object-cover"
-                    />
-                    {opt.emoji && (
-                      <span className="absolute bottom-0 right-0 rounded-tl-md bg-brown-900/70 px-1 py-0.5 text-[10px] leading-none text-white backdrop-blur">
-                        {opt.emoji}
-                      </span>
-                    )}
-                  </div>
-                ) : (
-                  <span
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl transition-transform group-hover:scale-110 ${
-                      active ? 'bg-cream-50/20' : 'bg-sand-100'
-                    }`}
-                  >
-                    {opt.emoji}
-                  </span>
-                )}
+                {/* Option Emoji Badge */}
+                <span
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-2xl transition-transform group-hover:scale-110 ${
+                    active ? 'bg-cream-50/20 text-white' : 'bg-sand-100 text-brown-800'
+                  }`}
+                >
+                  {opt.emoji || '🍽️'}
+                </span>
 
-                <span className="flex-1 text-sm font-semibold leading-snug">{opt.label}</span>
+                <span className="flex-1 text-sm sm:text-base font-semibold leading-snug">{opt.label}</span>
 
                 {/* Gamified Radio Checkmark */}
                 <span

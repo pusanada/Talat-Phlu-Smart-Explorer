@@ -41,8 +41,34 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [isSupabaseOnline, setIsSupabaseOnline] = useState(isSupabaseConfigured)
   const [votes, setVotes] = useState({}) // shopId -> 'like' | 'dislike' | null
-  const [quizAnswers, setQuizAnswers] = useState(() => Array(5).fill(null))
-  const [quizDone, setQuizDone] = useState(false)
+
+  // ── SessionStorage persistence for Quiz (keeps state on refresh) ──
+  const [quizAnswers, setQuizAnswers] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('tp_quiz_answers')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {}
+    return Array(5).fill(null)
+  })
+
+  const [quizDone, setQuizDone] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('tp_quiz_done')
+      if (saved) return JSON.parse(saved) === true
+    } catch {}
+    return false
+  })
+
+  // Sync quiz answers and completed status to sessionStorage
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('tp_quiz_answers', JSON.stringify(quizAnswers))
+      sessionStorage.setItem('tp_quiz_done', JSON.stringify(quizDone))
+    } catch {}
+  }, [quizAnswers, quizDone])
 
   // ── Initialize Data from Supabase ───────────────────────────
   useEffect(() => {
@@ -60,7 +86,19 @@ export default function App() {
         if (loadedPosts) setPosts(loadedPosts)
         if (loadedQuestions) {
           setQuestions(loadedQuestions)
-          setQuizAnswers(Array(loadedQuestions.length).fill(null))
+          setQuizAnswers((prev) => {
+            if (Array.isArray(prev) && prev.length === loadedQuestions.length && prev.some((a) => a !== null)) {
+              return prev
+            }
+            try {
+              const saved = sessionStorage.getItem('tp_quiz_answers')
+              if (saved) {
+                const parsed = JSON.parse(saved)
+                if (Array.isArray(parsed) && parsed.length === loadedQuestions.length) return parsed
+              }
+            } catch {}
+            return Array(loadedQuestions.length).fill(null)
+          })
         }
         if (isSupabaseConfigured && supabase) {
           const { error } = await supabase.from('shops').select('id').limit(1)
@@ -81,7 +119,14 @@ export default function App() {
     }
   }, [])
 
-  const blankQuiz = () => setQuizAnswers(Array(questions.length).fill(null))
+  const handleRestartQuiz = () => {
+    try {
+      sessionStorage.removeItem('tp_quiz_answers')
+      sessionStorage.removeItem('tp_quiz_done')
+    } catch {}
+    setQuizAnswers(Array(questions.length).fill(null))
+    setQuizDone(false)
+  }
 
   // ── Shop CRUD ────────────────────────────────────────────────
   const handleAddShop = async (payload) => {
@@ -147,10 +192,7 @@ export default function App() {
               answers={quizAnswers}
               shops={shops}
               questions={questions}
-              onRestart={() => {
-                blankQuiz()
-                setQuizDone(false)
-              }}
+              onRestart={handleRestartQuiz}
             />
           ) : (
             <Quiz
