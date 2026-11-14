@@ -47,21 +47,30 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
     setToast('กำลังสร้างรูปภาพ IG Story...')
 
     try {
-      // 1. Wait for web fonts (Noto Sans Thai, Kanit) to finish loading
+      // 1. Wait for document fonts to finish loading
       if (typeof document !== 'undefined' && document.fonts) {
         await document.fonts.ready
       }
-      // Give a brief moment for styles & fonts to settle
-      await new Promise((resolve) => setTimeout(resolve, 150))
+      await new Promise((resolve) => setTimeout(resolve, 200))
 
       const node = cardRef.current
-      const width = Math.max(node.clientWidth || 0, 480)
+      // Capture the exact bounding dimensions with zero mismatch
+      const width = Math.ceil(node.scrollWidth || node.offsetWidth || 380)
+      const height = Math.ceil(node.scrollHeight || node.offsetHeight || 600)
 
       const exportOptions = {
         cacheBust: true,
         pixelRatio: 2,
         backgroundColor: persona.bg,
+        skipFonts: true, // Use browser's rendered fonts to avoid webfont CORS and serif fallback
         width,
+        height,
+        style: {
+          width: `${width}px`,
+          height: `${height}px`,
+          margin: '0',
+          maxWidth: 'none',
+        },
       }
 
       // 2. Generate High-Res PNG Data URL
@@ -125,11 +134,11 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
         {/* ── EXPORTABLE CONTAINER (Captured for Image Export) ── */}
         <div
           ref={cardRef}
-          className="mx-auto w-full max-w-2xl rounded-[40px] px-3 py-4 sm:p-6 space-y-5"
+          className="mx-auto w-full max-w-xl rounded-[36px] p-4 sm:p-6 pb-8 space-y-5"
           style={{ backgroundColor: persona.bg }}
         >
           {/* Watermark branding header for shared image */}
-          <div className="flex items-center justify-between px-3 pt-2 text-[11px] font-bold text-brown-600/80">
+          <div className="flex items-center justify-between px-2 pt-1 text-[11px] font-bold text-brown-600/80">
             <span className="flex items-center gap-1.5">
               <span>🍧</span> ตลาดพลู สมาร์ทโซน
             </span>
@@ -137,10 +146,10 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           </div>
 
           {/* ── HERO SECTION: 3D-STYLE FLOATING CHARACTER (NO BOXES) ── */}
-          <div className="pt-2 pb-5 text-center relative">
+          <div className="pt-2 pb-4 text-center relative">
             {/* Ambient Aura Background */}
             <div
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-72 w-72 sm:h-96 sm:w-96 rounded-full blur-3xl opacity-40 pointer-events-none"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 sm:h-88 sm:w-88 rounded-full blur-3xl opacity-40 pointer-events-none"
               style={{ backgroundColor: persona.bgDeep }}
             />
 
@@ -155,13 +164,13 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             </div>
 
             {/* Floating Character Image — Large & Prominent Hero Element */}
-            <div className="relative my-3 flex items-center justify-center min-h-[280px] sm:min-h-[350px]">
+            <div className="relative my-3 flex items-center justify-center min-h-[260px] sm:min-h-[340px]">
               {characterSrc ? (
                 <img
                   src={characterSrc}
                   alt={persona.name}
                   onError={() => setCharacterImgError(true)}
-                  className="h-72 sm:h-88 md:h-96 w-auto max-w-full object-contain mx-auto select-none drop-shadow-[0_20px_35px_rgba(0,0,0,0.18)] transition-transform duration-500 hover:scale-105"
+                  className="h-64 sm:h-80 md:h-92 w-auto max-w-full object-contain mx-auto select-none drop-shadow-[0_20px_35px_rgba(0,0,0,0.18)] transition-transform duration-500 hover:scale-105"
                 />
               ) : (
                 <div className="py-6 scale-125 sm:scale-150">
@@ -171,13 +180,13 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
             </div>
 
             {/* Persona Title in Massive Bold Playful Font */}
-            <h1 className="font-display text-4xl sm:text-5xl font-black text-brown-900 tracking-normal whitespace-nowrap text-center drop-shadow-sm">
+            <h1 className="font-display text-3xl sm:text-5xl font-black text-brown-900 tracking-normal text-center drop-shadow-sm">
               {persona.name} {persona.emoji}
             </h1>
 
             {/* Brief Engaging Description in Soft Pill Badge */}
-            <div className="mt-3.5 inline-block max-w-md mx-auto px-2">
-              <div className="rounded-full bg-white/95 backdrop-blur px-6 py-2.5 shadow-bento-sm border border-white/70">
+            <div className="mt-3 inline-block max-w-md mx-auto px-2">
+              <div className="rounded-full bg-white/95 backdrop-blur px-5 py-2 shadow-bento-sm border border-white/70">
                 <p className="text-xs sm:text-sm font-bold text-brown-700 leading-relaxed text-center">
                   {persona.tagline}
                 </p>
@@ -188,34 +197,34 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           {/* ── STATS SECTION (BENTO-BOX STYLE CARDS) ── */}
           <div className="space-y-4">
             {/* Radar Chart Card */}
-            <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-bento border border-sand-100 flex flex-col items-center justify-center">
-              <h3 className="mb-2 text-center font-display text-base font-bold text-brown-900 whitespace-nowrap">
+            <div className="rounded-3xl bg-white p-4 sm:p-5 shadow-bento border border-sand-100 flex flex-col items-center justify-center">
+              <h3 className="mb-2 text-center font-display text-base font-bold text-brown-900">
                 📊 สเตตัสสายกิน 4 ด้าน
               </h3>
               <Radar stats={stats} fill={persona.bgDeep} />
             </div>
 
             {/* Progress Bars Card */}
-            <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-bento border border-sand-100 flex flex-col justify-center">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-display text-base font-bold text-brown-900 whitespace-nowrap">
+            <div className="rounded-3xl bg-white p-4 sm:p-5 shadow-bento border border-sand-100 flex flex-col justify-center">
+              <div className="mb-3.5 flex items-center justify-between">
+                <h3 className="font-display text-sm sm:text-base font-bold text-brown-900">
                   💪 จุดเด่นประจำสายของคุณ
                 </h3>
-                <span className="text-xs font-semibold text-brown-400 whitespace-nowrap">สัดส่วนคะแนน</span>
+                <span className="text-[11px] font-semibold text-brown-400 shrink-0">สัดส่วนคะแนน</span>
               </div>
-              <div className="space-y-3.5">
+              <div className="space-y-3">
                 {sortedStats.map((s) => (
-                  <div key={s.key} className="flex items-center gap-3">
-                    <span className="min-w-[105px] shrink-0 flex items-center gap-1.5 text-xs font-bold text-brown-800 whitespace-nowrap">
+                  <div key={s.key} className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-24 sm:w-28 shrink-0 flex items-center gap-1 text-xs font-bold text-brown-800">
                       <span>{s.emoji}</span>
-                      <span>{s.label}</span>
+                      <span className="truncate">{s.label}</span>
                       {s.isWinner && (
-                        <span className="rounded bg-warm-100 px-1.5 py-0.5 text-[9px] font-extrabold text-terracotta-600 whitespace-nowrap">
-                          ★ สายคุณ
+                        <span className="rounded bg-warm-100 px-1 py-0.2 text-[8px] font-black text-terracotta-600 shrink-0">
+                          คุณ
                         </span>
                       )}
-                    </span>
-                    <div className="h-4 flex-1 overflow-hidden rounded-full bg-sand-100">
+                    </div>
+                    <div className="h-3.5 flex-1 overflow-hidden rounded-full bg-sand-100">
                       <div
                         className={`h-full rounded-full transition-all duration-700 ${
                           s.isWinner
@@ -225,7 +234,7 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
                         style={{ width: `${Math.max(s.value, 6)}%` }}
                       />
                     </div>
-                    <span className={`w-12 shrink-0 text-right font-mono text-xs font-bold whitespace-nowrap ${s.isWinner ? 'text-terracotta-600 font-extrabold text-sm' : 'text-brown-700'}`}>
+                    <span className={`w-10 sm:w-11 shrink-0 text-right font-mono text-xs font-bold ${s.isWinner ? 'text-terracotta-600 font-extrabold text-sm' : 'text-brown-700'}`}>
                       {s.value}%
                     </span>
                   </div>
@@ -235,7 +244,7 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
           </div>
 
           {/* ── GAMIFIED TROPHY CASE & BADGES (BENTO-BOX ROUNDED-3XL) ── */}
-          <div className="rounded-3xl bg-white p-5 sm:p-6 shadow-bento border border-sand-100">
+          <div className="rounded-3xl bg-white p-4 sm:p-5 shadow-bento border border-sand-100">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-sand-100 pb-3 gap-2">
               <div className="flex items-center gap-2.5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-warm-100 text-warm-600">
@@ -380,13 +389,13 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
 
             <div className="mt-3 flex flex-col sm:flex-row items-center justify-between gap-2.5 px-2 pb-1">
               <p className="text-xs font-semibold text-brown-600">
-                📍 ย่านตลาดพลู กรุงเทพมหานคร
+                📍 พิกัดย่านตลาดพลูบน Google Maps
               </p>
               <a
                 href="https://www.google.com/maps/search/?api=1&query=%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%9E%E0%B8%A5%E0%B8%B9"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded-full bg-terracotta-500 px-4 py-2 text-xs font-bold text-white shadow-bento-sm hover:bg-terracotta-600 transition"
+                className="flex items-center gap-1.5 rounded-full bg-terracotta-500 px-4 py-2 text-xs font-bold text-white shadow-bento-sm hover:bg-terracotta-600 transition active:scale-95"
               >
                 <MapPin className="h-3.5 w-3.5" />
                 เปิดนำทาง Google Maps

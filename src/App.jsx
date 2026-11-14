@@ -46,6 +46,7 @@ export default function App() {
   const [aiModalOpen, setAiModalOpen] = useState(false)
 
   const isAdmin = !!member // members are always owner or sub-admin
+  const [adminViewMode, setAdminViewMode] = useState('dashboard') // 'dashboard' | 'directory'
   const openAuth = (mode = 'login') => setAuthModal({ open: true, mode })
   const closeAuth = () => setAuthModal({ open: false, mode: 'login' })
 
@@ -271,25 +272,66 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'shops' &&
-          (isAdmin ? (
-            <AdminDashboard
-              shops={shops}
-              currentMember={member}
-              team={team}
-              onAddShop={handleAddShop}
-              onUpdateShop={handleUpdateShop}
-              onDeleteShop={handleDeleteShop}
-              onApprove={approve}
-              onReject={reject}
-              onRemoveMember={removeMember}
-              onResetTeam={reset}
-              onRefreshTeam={refreshRequests}
-              onOpenInvite={() => openAuth('invite')}
-            />
-          ) : (
-            <ShopsDirectory shops={shops} votes={votes} onVote={castVote} loading={loading} />
-          ))}
+        {activeTab === 'shops' && (
+          <div>
+            {/* Admin Switcher Bar: Allows admin to view normal shops directory anytime */}
+            {isAdmin && (
+              <div className="mx-auto max-w-3xl px-4 pt-4 pb-1">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl bg-white p-2.5 shadow-bento-sm border border-sand-200">
+                  <div className="flex items-center gap-2 pl-1.5">
+                    <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-xs font-bold text-brown-800">
+                      เข้าสู่ระบบในฐานะ: <span className="text-terracotta-600 font-extrabold">{member?.name}</span> ({member?.role === 'owner' ? 'เจ้าของ' : 'ผู้ดูแล'})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setAdminViewMode('directory')}
+                      className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition active:scale-95 ${
+                        adminViewMode === 'directory'
+                          ? 'bg-brown-800 text-cream-50 shadow-sm'
+                          : 'bg-sand-100 text-brown-600 hover:bg-sand-200'
+                      }`}
+                    >
+                      👀 ดูหน้าร้านเด็ดปกติ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAdminViewMode('dashboard')}
+                      className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition active:scale-95 ${
+                        adminViewMode === 'dashboard'
+                          ? 'bg-terracotta-500 text-white shadow-sm'
+                          : 'bg-sand-100 text-brown-600 hover:bg-sand-200'
+                      }`}
+                    >
+                      ⚙️ แดชบอร์ดจัดการ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isAdmin && adminViewMode === 'dashboard' ? (
+              <AdminDashboard
+                shops={shops}
+                currentMember={member}
+                team={team}
+                onAddShop={handleAddShop}
+                onUpdateShop={handleUpdateShop}
+                onDeleteShop={handleDeleteShop}
+                onApprove={approve}
+                onReject={reject}
+                onRemoveMember={removeMember}
+                onResetTeam={reset}
+                onRefreshTeam={refreshRequests}
+                onOpenInvite={() => openAuth('invite')}
+              />
+            ) : (
+              <ShopsDirectory shops={shops} votes={votes} onVote={castVote} loading={loading} />
+            )}
+          </div>
+        )}
       </main>
 
       <BottomNav activeTab={activeTab} onChange={setActiveTab} />
