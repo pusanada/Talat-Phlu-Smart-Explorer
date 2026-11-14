@@ -9,7 +9,7 @@ import ShopsDirectory from './components/ShopsDirectory'
 import AdminDashboard from './components/AdminDashboard'
 import GeminiAiModal from './components/GeminiAiModal'
 import { useTeam } from './hooks/useTeam'
-import { isSupabaseConfigured } from './lib/supabase'
+import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { createShop, deleteShop, DEFAULT_SHOPS, getShops, recordVote, updateShop } from './services/shopService'
 import { createPost, getPosts } from './services/postService'
 import { getQuizQuestions } from './services/quizService'
@@ -39,6 +39,7 @@ export default function App() {
   const [posts, setPosts] = useState([])
   const [questions, setQuestions] = useState(DEFAULT_QUIZ_QUESTIONS)
   const [loading, setLoading] = useState(false)
+  const [isSupabaseOnline, setIsSupabaseOnline] = useState(isSupabaseConfigured)
   const [votes, setVotes] = useState({}) // shopId -> 'like' | 'dislike' | null
   const [quizAnswers, setQuizAnswers] = useState(() => Array(5).fill(null))
   const [quizDone, setQuizDone] = useState(false)
@@ -61,8 +62,15 @@ export default function App() {
           setQuestions(loadedQuestions)
           setQuizAnswers(Array(loadedQuestions.length).fill(null))
         }
+        if (isSupabaseConfigured && supabase) {
+          const { error } = await supabase.from('shops').select('id').limit(1)
+          setIsSupabaseOnline(!error)
+        } else {
+          setIsSupabaseOnline(false)
+        }
       } catch (err) {
         console.error('Error loading initial data from Supabase:', err)
+        setIsSupabaseOnline(false)
       } finally {
         if (isMounted) setLoading(false)
       }
@@ -129,7 +137,7 @@ export default function App() {
         onOpenAuth={() => openAuth('login')}
         onLogout={() => setMember(null)}
         onOpenAi={() => setAiModalOpen(true)}
-        isSupabaseConnected={isSupabaseConfigured}
+        isSupabaseConnected={isSupabaseOnline}
       />
 
       <main className="flex-1">
