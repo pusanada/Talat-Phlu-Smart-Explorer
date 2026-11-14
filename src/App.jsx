@@ -6,6 +6,7 @@ import Quiz from './components/Quiz'
 import Result from './components/Result'
 import Board from './components/Board'
 import ShopsDirectory from './components/ShopsDirectory'
+import AllShopsDirectory from './components/AllShopsDirectory'
 import AdminDashboard from './components/AdminDashboard'
 import GeminiAiModal from './components/GeminiAiModal'
 import { useTeam } from './hooks/useTeam'
@@ -272,9 +273,9 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'shops' && (
+        {(activeTab === 'stories' || activeTab === 'shops') && (
           <div>
-            {/* Admin Switcher Bar: Allows admin to view normal shops directory anytime */}
+            {/* Admin Switcher Bar: Allows admin to view normal stories directory anytime */}
             {isAdmin && (
               <div className="mx-auto max-w-3xl px-4 pt-4 pb-1">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl bg-white p-2.5 shadow-bento-sm border border-sand-200">
@@ -294,7 +295,7 @@ export default function App() {
                           : 'bg-sand-100 text-brown-600 hover:bg-sand-200'
                       }`}
                     >
-                      👀 ดูหน้าร้านเด็ดปกติ
+                      👀 ดูหน้าเรื่องเล่าปกติ
                     </button>
                     <button
                       type="button"
@@ -328,9 +329,19 @@ export default function App() {
                 onOpenInvite={() => openAuth('invite')}
               />
             ) : (
-              <ShopsDirectory shops={shops} votes={votes} onVote={castVote} loading={loading} />
+              <ShopsDirectory
+                shops={shops}
+                votes={votes}
+                onVote={castVote}
+                loading={loading}
+                onNavigateAllShops={() => setActiveTab('all_shops')}
+              />
             )}
           </div>
+        )}
+
+        {activeTab === 'all_shops' && (
+          <AllShopsDirectory shops={shops} loading={loading} />
         )}
       </main>
 

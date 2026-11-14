@@ -13,9 +13,16 @@ export default function ShopCard({ shop, accent = '#c2543a' }) {
 
   return (
     <article className="w-72 shrink-0 snap-start overflow-hidden rounded-[28px] bg-white shadow-bento transition-transform duration-200 active:scale-[0.98] sm:w-80">
-      <div className="relative h-40 overflow-hidden bg-sand-100 sm:h-44">
-        <img src={shop.image} alt={shop.name} loading="lazy" className="h-full w-full object-cover" />
-        <span className="absolute left-3 top-3 rounded-full bg-white/85 px-3 py-1 text-[10px] font-bold text-brown-700 backdrop-blur">
+      <div className="relative h-36 sm:h-40 overflow-hidden bg-gradient-to-br from-sand-100 via-warm-50 to-sand-200 flex items-center justify-center">
+        {shop.image && !shop.image.includes('unsplash.com') ? (
+          <img src={shop.image} alt={shop.name} loading="lazy" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex flex-col items-center justify-center text-center p-3">
+            <MapPin className="h-7 w-7 text-terracotta-500 mb-1" />
+            <span className="text-xs font-bold text-brown-800">พิกัดร้านบน Google Maps</span>
+          </div>
+        )}
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold text-brown-800 backdrop-blur shadow-sm">
           {shop.category}
         </span>
       </div>

@@ -21,7 +21,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_01',
     name: 'Hidden Bangkok Bistro',
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'อาหารฟิวชันริมคลอง & กาแฟสเปเชียลตี้',
     story: 'ร้านอาหารและคาเฟ่บรรยากาศสบายริมคลองบางหลวง ตลาดพลู เสิร์ฟอาหารฟิวชันและเครื่องดื่มชั้นเลิศ',
     map_link: 'https://www.google.com/maps/search/?api=1&query=Hidden%20Bangkok%20Bistro&query_place_id=34740457',
@@ -34,7 +35,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_02',
     name: 'Jann Cafe / Jann Coffee',
-    image: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'Dirty Coffee & โฮมเมดเบเกอรี่',
     story: 'คาเฟ่บรรยากาศอบอุ่นคลาสสิกใจกลางตลาดพลู เด่นด้วยเมล็ดกาแฟคัดพิเศษและเบเกอรี่อบใหม่',
     map_link: 'https://www.google.com/maps/search/?api=1&query=Jann%20Cafe%20/%20Jann%20Coffee&query_place_id=ChIJt3nVb9uZ4jARwJ7BlMMluYk',
@@ -47,7 +49,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_03',
     name: 'Laluna Cafe',
-    image: 'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'กาแฟดริป & ชาผลไม้คลายร้อน',
     story: 'คาเฟ่สไตล์มินิมอล ถ่ายรูปสวย แหล่งนัดพบยอดนิยมของคนรุ่นใหม่ในย่านตลาดพลู',
     map_link: 'https://www.google.com/maps/search/?api=1&query=Laluna%20Cafe&query_place_id=29026445',
@@ -60,7 +63,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_04',
     name: 'Masonia Tree & Coffee Cafe',
-    image: 'https://images.unsplash.com/photo-1507133750040-4a8f57021571?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'กาแฟสดท่ามกลางต้นไม้ & ครัวซองต์เนยสด',
     story: 'คาเฟ่ร่มรื่นใต้ร่มเงาต้นไม้ใหญ่ เหมาะสำหรับนั่งพักผ่อนหย่อนใจและชิมขนมอบสดใหม่',
     map_link: 'https://www.google.com/maps/search/?api=1&query=Masonia%20Tree%20%26%20Coffee%20Cafe&query_place_id=ChIJnyVV7tmZ4jARjZ9qVoH6cwI',
@@ -73,7 +77,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_05',
     name: 'ABC Coffee',
-    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'Specialty Coffee & เมล็ดคั่วพิเศษ',
     story: 'ร้านกาแฟ Specialty ตัวจริง คั่วบดสดใหม่ รสชาติมีเอกลักษณ์เฉพาะตัว',
     map_link: 'https://www.google.com/maps/search/?api=1&query=ABC%20Coffee&query_place_id=ChIJ_31hY1uY4jAR_2wbbUAoZBA',
@@ -86,7 +91,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_06',
     name: 'LYNX Coffee',
-    image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'Matcha Cheese Pie & ซิกเนเจอร์ลาเต้',
     story: 'คาเฟ่ชื่อดังที่มีเมนูพายชาเขียวในตำนานและกาแฟคุณภาพเยี่ยม',
     map_link: 'https://www.google.com/maps/search/?api=1&query=LYNX%20Coffee&query_place_id=ChIJO1suWVuY4jARB2jk0WPLt_w',
@@ -99,7 +105,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_07',
     name: 'AantArm Cafe',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'สเต๊กเนื้อพรีเมียม & กาแฟสไตล์โมเดิร์น',
     story: 'คาเฟ่กึ่งร้านสเต๊กบรรยากาศสุดชิค เสิร์ฟสเต๊กเนื้อนุ่มและอาหารรสเลิศ',
     map_link: 'https://www.google.com/maps/search/?api=1&query=AantArm%20Cafe&query_place_id=ChIJTVQxg1uY4jARGtQTwopM_uI',
@@ -112,7 +119,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_08',
     name: 'MATCHAMA (มัทฉะมะ)',
-    image: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'มัทฉะเกรดพิธีการเข้มข้น & ไอศกรีมมัทฉะ',
     story: 'สวรรค์ของคนรักมัทฉะแท้จากญี่ปุ่น ชงสดแก้วต่อแก้ว หอมละมุนเข้มข้น',
     map_link: 'https://www.google.com/maps/search/?api=1&query=MATCHAMA%20%28%E0%B8%A1%E0%B8%B1%E0%B8%97%E0%B8%89%E0%B8%B0%E0%B8%A1%E0%B8%B0%29&query_place_id=ChIJzyBzYZWZ4jAR1u9WohoSibw',
@@ -125,7 +133,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_09',
     name: 'หมี่กรอบจีนหลี สมัย ร.5 (Tek Heng)',
-    image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'หมี่กรอบโบราณพระราชทานสูตรสมัย ร.5',
     story: 'ตำนานหมี่กรอบร้อยปีที่ได้รับพระราชทานรางวัลตั้งแต่รัชกาลที่ 5 กรอบอร่อยเข้มข้นถึงเครื่อง',
     map_link: 'https://www.google.com/maps/search/?api=1&query=%E0%B8%AB%E0%B8%A1%E0%B8%B5%E0%B9%88%E0%B8%81%E0%B8%A3%E0%B8%AD%E0%B8%9A%E0%B8%88%E0%B8%B5%E0%B8%99%E0%B8%AB%E0%B8%A5%E0%B8%B5%20%E0%B8%AA%E0%B8%A1%E0%B8%B1%E0%B8%A2%20%E0%B8%A3.5%20%28Tek%20Heng%29&query_place_id=ChIJrTSW6FuY4jARc2IhhsnMNQQ',
@@ -138,7 +147,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_10',
     name: 'Neko Matcha',
-    image: 'https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'Matcha Latte เข้มข้น & โฮมเมดสโคน',
     story: 'คาเฟ่ชาเขียวสไตล์ญี่ปุ่น ตกแต่งน่ารักอบอุ่น รสชาติมัทฉะแท้กลมกล่อม',
     map_link: 'https://www.google.com/maps/search/?api=1&query=%E0%B8%81%E0%B8%A5%E0%B8%B8%E0%B9%88%E0%B8%A1%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%99%E2%80%A6%20Neko%20Matcha&query_place_id=ChIJoXIoR3qZ4jARyZznB202Rac',
@@ -151,7 +161,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_11',
     name: 'ขนมหวานตลาดพลู (เจ้าเก่า)',
-    image: 'https://images.unsplash.com/photo-1579372786545-d24232daf58c?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'ทองหยอด เม็ดขนุน ตะโก้ ข้าวเหนียวตัด',
     story: 'ร้านขนมไทยโบราณเจ้าเก่าแก่แห่งตลาดพลู หอมหวานมันกะทิสด ทำสดใหม่ทุกวัน',
     map_link: 'https://www.google.com/maps/search/?api=1&query=%E0%B8%82%E0%B8%99%E0%B8%A1%E0%B8%AB%E0%B8%A7%E0%B8%B2%E0%B8%99%E0%B8%95%E0%B8%A5%E0%B8%B2%E0%B8%94%E0%B8%9E%E0%B8%A5%E0%B8%B9%20%28%E0%B9%80%E0%B8%88%E0%B9%89%E0%B8%B2%E0%B9%80%E0%B8%81%E0%B9%88%E0%B8%B2%29&query_place_id=ChIJtS_851uY4jARjoMJoSbyHhI',
@@ -164,7 +175,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_12',
     name: 'Catory Pizza (พิซซ่ากุยช่าย)',
-    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'พิซซ่าหน้ากุยช่ายตลาดพลู แป้งบางกรอบชีสเยิ้ม',
     story: 'ความลงตัวของการผสมผสานกุยช่ายตลาดพลูเข้ากับแป้งพิซซ่าอิตาเลียน อบใหม่ร้อนๆ',
     map_link: 'https://www.google.com/maps/search/?api=1&query=Catory%20Pizza%20%28%E0%B8%9E%E0%B8%B4%E0%B8%8B%E0%B8%8B%E0%B9%88%E0%B8%B2%E0%B8%81%E0%B8%B8%E0%B8%A2%E0%B8%8A%E0%B9%88%E0%B8%B2%E0%B8%A2%29&query_place_id=ChIJrRzviZaZ4jARr8iUZRKEESU',
@@ -177,7 +189,8 @@ export const DEFAULT_SHOPS = [
   {
     id: 'map_13',
     name: 'HARU Bakehouse',
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80',
+    image: null,
+    video: null,
     signature_menu: 'ชิโอะปัง Shio Pan & เค้กญี่ปุ่นนุ่มละมุน',
     story: 'เบเกอรี่สไตล์ญี่ปุ่น หอมกรุ่นกลิ่นเนยสดทุกเช้า ขนมปังเนื้อสัมผัสนุ่มเด้ง',
     map_link: 'https://www.google.com/maps/search/?api=1&query=HARU%20Bakehouse&query_place_id=ChIJY8CvWgCZ4jAR06Q72njINhI',
@@ -219,8 +232,8 @@ export async function createShop(payload) {
   const newShop = {
     id: `shop_${Date.now().toString(36)}`,
     ...payload,
-    video: payload.video || '/videos/talat-phlu-story.mp4',
-    video_duration: payload.video_duration || '1:45',
+    video: payload.video || null,
+    video_duration: payload.video ? payload.video_duration || '1:45' : null,
     personas: payload.personas || ['sweet', 'street'],
     category: payload.category || 'ร้านใหม่',
     likes: 0,
