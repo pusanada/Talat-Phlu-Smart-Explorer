@@ -33,15 +33,14 @@ export async function getAdminRequests() {
 /**
  * Submit a new admin application with email, generate random access code, and notify owner
  */
-export async function submitAdminRequest({ name, email, reason = '', source = 'self' }) {
-  // Generate a secure random 6-digit access code for this specific applicant
-  const randomCode = Math.floor(100000 + Math.random() * 900000).toString()
+export async function submitAdminRequest({ name, email, password = '', reason = '', source = 'self' }) {
+  const userPin = (password || '').trim() || Math.floor(100000 + Math.random() * 900000).toString()
 
   const newRequest = {
     id: `req_${Date.now().toString(36)}`,
     name: name.trim(),
     email: email.trim().toLowerCase(),
-    pin: randomCode,
+    pin: userPin,
     reason: reason.trim(),
     status: 'pending',
     source,
@@ -57,7 +56,7 @@ export async function submitAdminRequest({ name, email, reason = '', source = 's
           id: newRequest.id,
           name: newRequest.name,
           email: newRequest.email,
-          pin: randomCode,
+          pin: userPin,
           reason: newRequest.reason,
           status: 'pending',
         },
@@ -77,20 +76,18 @@ export async function submitAdminRequest({ name, email, reason = '', source = 's
     console.warn('localStorage save error:', err)
   }
 
-  // 3. Prepare notification email to the owner with the random access code
+  // 3. Prepare notification email to the owner
   const targetEmail = ownerEmail || 'gantoja29@gmail.com'
-  const subjectRaw = `[ตลาดพลู] ขอสิทธิ์ Admin: ${newRequest.name} (รหัสผ่านสุ่ม: ${randomCode})`
+  const subjectRaw = `[ตลาดพลู] ขอสิทธิ์ Admin: ${newRequest.name}`
   const bodyRaw =
     `เรียน เจ้าของระบบตลาดพลู (${targetEmail})\n\n` +
     `มีผู้ยื่นคำขอสมัครเป็นผู้ดูแลระบบ (Admin) ใหม่ ดังนี้:\n` +
     `• ชื่อ: ${newRequest.name}\n` +
     `• อีเมลผู้สมัคร: ${newRequest.email}\n` +
     `• เหตุผล / ร้านค้าที่ดูแล: ${newRequest.reason || 'ไม่ได้ระบุ'}\n` +
-    `• 🔑 รหัสผ่านเข้าใช้งานที่ระบบสุ่มให้คนนี้: [ ${randomCode} ]\n` +
     `• เวลาที่ยื่น: ${new Date().toLocaleString('th-TH')}\n\n` +
-    `วิธีอนุมัติ:\n` +
-    `1. หากท่านอนุญาต ให้ส่งรหัส [ ${randomCode} ] นี้ให้ผู้สมัคร เพื่อให้เขานำไปใช้ล็อกอินในช่อง "รหัสผ่าน"\n` +
-    `2. หรือเข้าสู่ระบบตลาดพลู เพื่อกดยืนยันการอนุมัติในแดชบอร์ดผู้ดูแลได้ทันทีครับ`
+    `ผู้สมัครได้ตั้งรหัสผ่านสำหรับเข้าใช้งานด้วยตนเองเรียบร้อยแล้ว\n` +
+    `กรุณาเข้าสู่ระบบแดชบอร์ดตลาดพลูเพื่อกด "ยืนยันสิทธิ์" ให้ผู้สมัครครับ`
 
   const subject = encodeURIComponent(subjectRaw)
   const body = encodeURIComponent(bodyRaw)
@@ -100,7 +97,7 @@ export async function submitAdminRequest({ name, email, reason = '', source = 's
   return {
     ok: true,
     request: newRequest,
-    randomCode,
+    password: userPin,
     savedToSupabase,
     ownerEmail: targetEmail,
     mailtoLink,
@@ -109,7 +106,7 @@ export async function submitAdminRequest({ name, email, reason = '', source = 's
 }
 
 /**
- * Verify if applicant is approved in Supabase with matching access code
+ * Verify if applicant is approved in Supabase with matching password
  */
 export async function verifyAdminFromSupabase(email, code) {
   if (!isSupabaseConfigured || !supabase) return null
@@ -125,17 +122,12 @@ export async function verifyAdminFromSupabase(email, code) {
     if (error || !data || data.length === 0) return null
 
     const found = data[0]
-    // Allow login if applicant enters their assigned random 6-digit code or status is approved
-    if (found.pin && code && found.pin === code) {
-      return {
-        id: found.id,
-        name: found.name,
-        email: found.email,
-        role: 'sub-admin',
-      }
-    }
 
+    // If request is approved
     if (found.status === 'approved') {
+      if (found.pin && found.pin !== 'email_auth' && code !== found.pin) {
+        return null
+      }
       return {
         id: found.id,
         name: found.name,

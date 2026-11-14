@@ -10,11 +10,12 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
   const [mode, setMode] = useState(initialMode ?? 'login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [customPassword, setCustomPassword] = useState('')
   const [name, setName] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(null) // { title, message, randomCode, gmailUrl, mailtoUrl, ownerEmail }
+  const [success, setSuccess] = useState(null) // { title, message, userEmail, userPassword, gmailUrl, mailtoUrl, ownerEmail }
 
   if (!open) return null
 
@@ -57,12 +58,17 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
       setError('กรุณากรอกอีเมลที่ถูกต้อง')
       return
     }
+    if (!customPassword.trim() || customPassword.trim().length < 4) {
+      setError('กรุณาตั้งรหัสผ่านสำหรับเข้าสู่ระบบ (อย่างน้อย 4 ตัวอักษร)')
+      return
+    }
 
     setLoading(true)
     try {
       const result = await addRequest({
         name: name.trim(),
         email: email.trim(),
+        password: customPassword.trim(),
         reason: reason.trim(),
         source: 'self',
       })
@@ -83,8 +89,9 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
 
       setSuccess({
         title: 'ส่งคำขอสมัครสำเร็จแล้ว!',
-        randomCode: result.randomCode,
-        message: `บันทึกคำขอของ "${name.trim()}" เรียบร้อยแล้ว ระบบได้สร้างรหัสเข้าใช้งานสำหรับคุณและส่งไปยังอีเมลของเจ้าของระบบ (${targetOwner}) แล้ว`,
+        userEmail: email.trim(),
+        userPassword: customPassword.trim(),
+        message: `บันทึกคำขอของ "${name.trim()}" เรียบร้อยแล้ว ระบบได้ส่งแจ้งเตือนไปยังเจ้าของระบบ (${targetOwner}) เมื่อได้รับการอนุมัติแล้ว คุณสามารถใช้อีเมลนี้และรหัสผ่านที่คุณตั้งเข้าสู่ระบบได้ทันที`,
         gmailUrl,
         mailtoUrl,
         ownerEmail: targetOwner,
@@ -132,18 +139,19 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
             <h3 className="mt-3 font-display text-lg font-bold text-brown-900">{success.title}</h3>
             <p className="mt-1 text-xs leading-relaxed text-brown-600">{success.message}</p>
 
-            {/* Prominent Random Code Display */}
-            {success.randomCode && (
+            {/* User Custom Password Confirmation Box */}
+            {success.userPassword && (
               <div className="my-3.5 rounded-2xl bg-amber-50 p-3.5 border border-amber-200 text-left">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-amber-900">🔑 รหัสผ่านสุ่มเข้าใช้งานของคุณ:</span>
-                  <span className="text-[10px] font-semibold text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full">โปรดจดบันทึกไว้</span>
+                  <span className="text-xs font-bold text-amber-900">🔑 รหัสผ่านที่คุณตั้งไว้:</span>
+                  <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">บันทึกเรียบร้อย</span>
                 </div>
-                <div className="mt-2 flex items-center justify-center rounded-xl bg-white py-2 font-mono text-2xl font-black tracking-widest text-terracotta-600 shadow-inner border border-amber-100">
-                  {success.randomCode}
+                <div className="mt-1.5 flex items-center justify-between rounded-xl bg-white px-3.5 py-2 shadow-inner border border-amber-100">
+                  <span className="font-mono text-base font-black tracking-wider text-brown-900">{success.userPassword}</span>
+                  <span className="text-xs font-sans text-brown-400 font-medium">{success.userEmail}</span>
                 </div>
                 <p className="mt-1.5 text-[11px] leading-relaxed text-amber-800">
-                  ระบบได้ส่งรหัสนี้ไปในอีเมลแจ้งเจ้าของระบบแล้ว เมื่อได้รับการยืนยัน คุณสามารถใช้อีเมลของคุณคู่กับรหัส 6 หลักนี้เพื่อเข้าสู่ระบบได้ทันที
+                  เมื่อเจ้าของระบบกดยืนยันอนุมัติสิทธิ์ในระบบ คุณสามารถใช้อีเมลและรหัสผ่านที่คุณตั้งนี้เข้าสู่ระบบได้ทันที
                 </p>
               </div>
             )}
@@ -175,8 +183,8 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
               onClick={() => {
                 setSuccess(null)
                 setMode('login')
-                setEmail(email)
-                setPassword(success.randomCode || '')
+                setEmail(success.userEmail || email)
+                setPassword(success.userPassword || '')
               }}
               className="mt-4 w-full rounded-[40px] bg-brown-800 py-3 text-xs font-bold text-white shadow-bento-sm transition hover:bg-brown-900 active:scale-[0.97]"
             >
@@ -309,6 +317,24 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
                     required
                     className="w-full rounded-xl border border-sand-200 bg-sand-50 px-3.5 py-2.5 text-sm font-semibold text-brown-900 outline-none transition placeholder:font-normal placeholder:text-brown-300 focus:border-terracotta-400 focus:ring-2 focus:ring-terracotta-400/20"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-brown-700 mb-1">
+                    ตั้งรหัสผ่านของคุณ * (สำหรับใช้เข้าสู่ระบบ)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={customPassword}
+                      onChange={(e) => setCustomPassword(e.target.value)}
+                      placeholder="ตั้งรหัสผ่าน (อย่างน้อย 4 ตัวอักษร)"
+                      maxLength={30}
+                      required
+                      className="w-full rounded-xl border border-sand-200 bg-sand-50 px-3.5 py-2.5 text-sm font-semibold text-brown-900 outline-none transition placeholder:font-normal placeholder:text-brown-300 focus:border-terracotta-400 focus:ring-2 focus:ring-terracotta-400/20"
+                    />
+                    <LockKeyhole className="absolute right-3.5 top-3 h-4 w-4 text-brown-300" />
+                  </div>
                 </div>
 
                 <div>

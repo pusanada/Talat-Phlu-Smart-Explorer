@@ -67,9 +67,9 @@ export default function TeamPanel({ team, currentMember, onApprove, onReject, on
                           "{req.reason}"
                         </p>
                       )}
-                      {req.pin && (
+                      {req.pin && req.pin !== 'email_auth' && (
                         <div className="mt-1.5 flex items-center gap-1.5">
-                          <span className="text-[11px] font-bold text-brown-600">🔑 รหัสสุ่มเข้าใช้งาน:</span>
+                          <span className="text-[11px] font-bold text-brown-600">🔑 รหัสผ่านที่ผู้สมัครตั้ง:</span>
                           <span className="rounded-md bg-warm-100 px-2 py-0.5 font-mono text-xs font-black text-terracotta-600 border border-warm-200">
                             {req.pin}
                           </span>

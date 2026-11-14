@@ -126,19 +126,19 @@ export function useTeam() {
       // 2. Sub-Admin Local Check
       const existingMember = team.members.find((m) => m.email?.toLowerCase() === normalized)
       if (existingMember) {
-        if (existingMember.pin && code && existingMember.pin !== code) {
-          return { ok: false, error: 'รหัสเข้าใช้งานไม่ถูกต้อง' }
+        if (existingMember.pin && existingMember.pin !== 'email_auth' && code !== existingMember.pin) {
+          return { ok: false, error: 'รหัสผ่านไม่ถูกต้อง' }
         }
         return { ok: true, member: existingMember }
       }
 
-      // 3. Pending/Approved Requests Check with Random Access Code
+      // 3. Pending/Approved Requests Check
       const pendingMatch = team.pending.find((p) => p.email?.toLowerCase() === normalized)
       if (pendingMatch) {
-        if (pendingMatch.pin && code && pendingMatch.pin !== code) {
-          return { ok: false, error: 'รหัสเข้าใช้งานไม่ถูกต้อง' }
+        if (pendingMatch.pin && pendingMatch.pin !== 'email_auth' && code !== pendingMatch.pin) {
+          return { ok: false, error: 'รหัสผ่านไม่ถูกต้อง' }
         }
-        if (pendingMatch.status === 'approved' || (pendingMatch.pin && code === pendingMatch.pin)) {
+        if (pendingMatch.status === 'approved') {
           return {
             ok: true,
             member: {
@@ -170,7 +170,7 @@ export function useTeam() {
    * Add a pending registration request by Email
    */
   const addRequest = useCallback(
-    async ({ name, email, reason = '', source = 'self', invitedBy = null }) => {
+    async ({ name, email, password = '', reason = '', source = 'self', invitedBy = null }) => {
       const normalizedEmail = (email || '').trim().toLowerCase()
       if (!normalizedEmail || !normalizedEmail.includes('@')) {
         return { ok: false, error: 'กรุณากรอกอีเมลที่ถูกต้องเพื่อใช้ในการยืนยัน' }
@@ -190,6 +190,7 @@ export function useTeam() {
       const serviceResult = await submitAdminRequest({
         name,
         email: normalizedEmail,
+        password,
         reason,
         source,
       })
@@ -198,7 +199,7 @@ export function useTeam() {
         id: serviceResult.request?.id || `req_${Date.now().toString(36)}`,
         name: name.trim(),
         email: normalizedEmail,
-        pin: serviceResult.randomCode || 'email_auth',
+        pin: (password || '').trim() || 'email_auth',
         reason: reason.trim(),
         source, // 'self' | 'invite'
         invitedBy: invitedBy ?? null,
@@ -210,7 +211,7 @@ export function useTeam() {
       return {
         ok: true,
         request,
-        randomCode: serviceResult.randomCode,
+        password: (password || '').trim(),
         mailtoLink: serviceResult.mailtoLink,
         gmailUrl: serviceResult.gmailUrl,
         ownerEmail: serviceResult.ownerEmail,
@@ -232,6 +233,7 @@ export function useTeam() {
             id: `member_${Date.now().toString(36)}`,
             name: req.name,
             email: req.email,
+            pin: req.pin,
             role: 'sub_admin',
             reason: req.reason,
             invitedBy: req.invitedBy ?? 'สมัครผ่านอีเมล',
