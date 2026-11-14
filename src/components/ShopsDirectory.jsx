@@ -91,19 +91,28 @@ function VideoShopCard({ shop, rank, vote, onVote }) {
 
   return (
     <article className="animate-pop overflow-hidden rounded-[28px] bg-white shadow-bento">
-      {/* Video */}
+      {/* Video or Image Banner */}
       <div className="p-3">
         <div className="relative aspect-video overflow-hidden rounded-[20px] bg-brown-900">
-          <video
-            controls
-            preload="metadata"
-            playsInline
-            poster={shop.image}
-            className="h-full w-full object-cover"
-          >
-            <source src={shop.video} type="video/mp4" />
-            เบราว์เซอร์ของคุณไม่รองรับวิดีโอ
-          </video>
+          {shop.video ? (
+            <video
+              controls
+              preload="metadata"
+              playsInline
+              poster={shop.image}
+              className="h-full w-full object-cover"
+            >
+              <source src={shop.video} type="video/mp4" />
+              เบราว์เซอร์ของคุณไม่รองรับวิดีโอ
+            </video>
+          ) : (
+            <img
+              src={shop.image}
+              alt={shop.name}
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
+          )}
 
           {rank !== null && (
             <span
@@ -116,10 +125,12 @@ function VideoShopCard({ shop, rank, vote, onVote }) {
             </span>
           )}
 
-          <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-brown-900/70 px-2.5 py-1 text-[11px] font-bold text-cream-50 backdrop-blur">
-            <Play className="h-3 w-3 fill-current" aria-hidden="true" />
-            {shop.video_duration}
-          </span>
+          {shop.video && (
+            <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-brown-900/70 px-2.5 py-1 text-[11px] font-bold text-cream-50 backdrop-blur">
+              <Play className="h-3 w-3 fill-current" aria-hidden="true" />
+              {shop.video_duration || 'คลิปสั้น'}
+            </span>
+          )}
         </div>
       </div>
 

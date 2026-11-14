@@ -71,3 +71,25 @@ export async function createPost({ author, message, shop_id }) {
     return newPost
   }
 }
+
+/**
+ * Like or unlike a community post in Supabase
+ */
+export async function likePost(postId, newLikesCount) {
+  if (!isSupabaseConfigured || !supabase) {
+    return newLikesCount
+  }
+
+  try {
+    const { error } = await supabase
+      .from('posts')
+      .update({ likes: Math.max(0, newLikesCount) })
+      .eq('id', postId)
+
+    if (error) throw error
+    return newLikesCount
+  } catch (err) {
+    console.error('Supabase likePost error:', err)
+    return newLikesCount
+  }
+}

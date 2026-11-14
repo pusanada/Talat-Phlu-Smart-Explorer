@@ -4,7 +4,11 @@ import TeamPanel from './TeamPanel'
 
 const EMPTY_FORM = {
   name: '',
-  image: null, // File (PNG only)
+  image: null, // File (PNG/JPG/WebP)
+  imageUrl: '',
+  video: '',
+  video_duration: '2:00',
+  category: 'ของหวานโบราณ',
   signature_menu: '',
   story: '',
   map_link: '',
@@ -46,8 +50,8 @@ export default function AdminDashboard({
 
   const pickImage = (file) => {
     if (!file) return
-    if (file.type !== 'image/png') {
-      setErrors((e) => ({ ...e, image: 'รองรับไฟล์ PNG เท่านั้น' }))
+    if (!file.type.startsWith('image/')) {
+      setErrors((e) => ({ ...e, image: 'รองรับไฟล์รูปภาพ PNG, JPG, JPEG หรือ WebP' }))
       return
     }
     setErrors((e) => ({ ...e, image: undefined }))
@@ -88,10 +92,14 @@ export default function AdminDashboard({
 
     const payload = {
       name: form.name.trim(),
-      image: imagePreview ?? 'https://placehold.co/400x300/f8ecda/c2543a?text=Talat+Phlu&font=noto-sans',
+      image: imagePreview || (form.imageUrl?.trim() || 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&w=600&q=80'),
+      video: form.video?.trim() || '/videos/talat-phlu-story.mp4',
+      video_duration: form.video_duration?.trim() || '2:00',
+      category: form.category?.trim() || 'ของหวานโบราณ',
       signature_menu: form.signature_menu.trim(),
       story: form.story.trim(),
       map_link: form.map_link.trim(),
+      personas: ['sweet', 'street', 'chill', 'healthy'],
     }
 
     if (editingId) {
@@ -119,11 +127,15 @@ export default function AdminDashboard({
     setErrors({})
     setImagePreview(null)
     setForm({
-      name: shop.name,
+      name: shop.name || '',
       image: null,
-      signature_menu: shop.signature_menu,
-      story: shop.story,
-      map_link: shop.map_link,
+      imageUrl: shop.image || '',
+      video: shop.video || '',
+      video_duration: shop.video_duration || '2:00',
+      category: shop.category || 'ของหวานโบราณ',
+      signature_menu: shop.signature_menu || '',
+      story: shop.story || '',
+      map_link: shop.map_link || '',
     })
     if (fileInputRef.current) fileInputRef.current.value = ''
     setTab('shops')
@@ -207,36 +219,79 @@ export default function AdminDashboard({
                 />
               </Field>
 
-              {/* Image — PNG only */}
-              <Field label="รูปภาพร้าน (PNG เท่านั้น)" hint="ไฟล์ .png" error={errors.image}>
-                <div className="flex items-center gap-3">
-                  <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brown-200 bg-sand-100 px-4 py-3.5 text-sm font-bold text-brown-500 transition hover:border-warm-400 hover:bg-warm-100">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png"
-                      className="sr-only"
-                      onChange={(e) => pickImage(e.target.files?.[0])}
-                    />
-                    📁 เลือกไฟล์รูปภาพ
-                  </label>
-                  {imagePreview && (
-                    <div className="relative">
-                      <img
-                        src={imagePreview}
-                        alt="ตัวอย่างรูปร้าน"
-                        className="h-14 w-20 rounded-2xl object-cover shadow-bento-sm"
+              {/* Category */}
+              <Field label="หมวดหมู่ร้าน" hint="เช่น ของหวานโบราณ, สตรีทฟู้ด, อาหารจานเดียว">
+                <input
+                  type="text"
+                  value={form.category}
+                  onChange={(e) => setField('category', e.target.value)}
+                  placeholder="เช่น ของหวานโบราณ"
+                  className={inputClass(null)}
+                />
+              </Field>
+
+              {/* Image — PNG, JPG, WebP or Image URL */}
+              <Field label="รูปภาพร้าน (Picture / Poster)" hint="รองรับไฟล์ PNG, JPG, WebP หรือใส่ลิงก์ภาพ URL" error={errors.image}>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brown-200 bg-sand-100 px-4 py-3 text-sm font-bold text-brown-500 transition hover:border-warm-400 hover:bg-warm-100">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={(e) => pickImage(e.target.files?.[0])}
                       />
-                      <button
-                        type="button"
-                        onClick={clearImage}
-                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-terracotta-500 text-white shadow-bento-sm"
-                        aria-label="ลบรูปที่เลือก"
-                      >
-                        <X className="h-3 w-3" aria-hidden="true" />
-                      </button>
-                    </div>
-                  )}
+                      📁 เลือกไฟล์รูปภาพ (PNG, JPG, WebP)
+                    </label>
+                    {imagePreview && (
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="ตัวอย่างรูปร้าน"
+                          className="h-14 w-20 rounded-2xl object-cover shadow-bento-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={clearImage}
+                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-terracotta-500 text-white shadow-bento-sm"
+                          aria-label="ลบรูปที่เลือก"
+                        >
+                          <X className="h-3 w-3" aria-hidden="true" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="url"
+                    value={form.imageUrl}
+                    onChange={(e) => setField('imageUrl', e.target.value)}
+                    placeholder="หรือใส่ลิงก์รูปภาพ URL (https://...)"
+                    className={inputClass(null, 'text-xs')}
+                  />
+                </div>
+              </Field>
+
+              {/* Video — URL or File path */}
+              <Field label="คลิปวิดีโอร้าน (Video)" hint="ลิงก์ไฟล์ .mp4 หรือคลิปสั้นแนะนำร้าน">
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={form.video}
+                    onChange={(e) => setField('video', e.target.value)}
+                    placeholder="เช่น /videos/talat-phlu-story.mp4 หรือ https://.../video.mp4"
+                    className={inputClass(null)}
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-brown-500 shrink-0">⏱️ ความยาวคลิป:</span>
+                    <input
+                      type="text"
+                      value={form.video_duration}
+                      onChange={(e) => setField('video_duration', e.target.value)}
+                      placeholder="เช่น 2:05"
+                      className="w-24 rounded-xl border border-sand-200 bg-sand-100 px-3 py-1.5 text-xs font-bold text-brown-800"
+                    />
+                  </div>
                 </div>
               </Field>
 

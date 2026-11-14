@@ -11,7 +11,7 @@ import GeminiAiModal from './components/GeminiAiModal'
 import { useTeam } from './hooks/useTeam'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { createShop, deleteShop, DEFAULT_SHOPS, getShops, recordVote, updateShop } from './services/shopService'
-import { createPost, getPosts } from './services/postService'
+import { createPost, getPosts, likePost } from './services/postService'
 import { getQuizQuestions } from './services/quizService'
 import { DEFAULT_QUIZ_QUESTIONS } from './constants/defaultQuestions'
 
@@ -40,7 +40,15 @@ export default function App() {
   const [questions, setQuestions] = useState(DEFAULT_QUIZ_QUESTIONS)
   const [loading, setLoading] = useState(false)
   const [isSupabaseOnline, setIsSupabaseOnline] = useState(isSupabaseConfigured)
-  const [votes, setVotes] = useState({}) // shopId -> 'like' | 'dislike' | null
+  // ── LocalStorage persistence for user shop votes (like / dislike) ──
+  const [votes, setVotes] = useState(() => {
+    try {
+      const raw = localStorage.getItem('tp_shop_votes')
+      return raw ? JSON.parse(raw) : {}
+    } catch {
+      return {}
+    }
+  })
 
   // ── SessionStorage persistence for Quiz (keeps state on refresh) ──
   const [quizAnswers, setQuizAnswers] = useState(() => {
@@ -162,7 +170,11 @@ export default function App() {
         return targetShop
       }),
     )
-    setVotes((prev) => ({ ...prev, [shopId]: kind }))
+    const nextVotes = { ...votes, [shopId]: kind }
+    setVotes(nextVotes)
+    try {
+      localStorage.setItem('tp_shop_votes', JSON.stringify(nextVotes))
+    } catch {}
 
     if (targetShop) {
       await recordVote(shopId, kind, targetShop)
@@ -173,6 +185,13 @@ export default function App() {
   const handleAddPost = async ({ author, message, shop_id }) => {
     const created = await createPost({ author, message, shop_id })
     setPosts((prev) => [created, ...prev])
+  }
+
+  const handleLikePost = async (postId, nextLikes) => {
+    setPosts((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, likes: nextLikes } : p)),
+    )
+    await likePost(postId, nextLikes)
   }
 
   return (
@@ -212,6 +231,7 @@ export default function App() {
             shops={shops}
             loading={loading}
             onAddPost={handleAddPost}
+            onLikePost={handleLikePost}
           />
         )}
 

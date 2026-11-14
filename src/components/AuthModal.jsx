@@ -60,11 +60,23 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
         return
       }
 
+      const targetOwner = result.ownerEmail || 'gantoja29@gmail.com'
+      const subject = `[ตลาดพลู] คำขอสมัครเป็น Admin ใหม่: ${name.trim()}`
+      const body = `เรียน เจ้าของระบบตลาดพลู (${targetOwner})\n\nมีผู้ยื่นคำขอสมัครเป็น Admin ดังนี้:\n- ชื่อ: ${name.trim()}\n- อีเมล: ${email.trim()}\n- ร้านค้า/เหตุผล: ${reason.trim() || 'ไม่ได้ระบุ'}\n- ยื่นเมื่อ: ${new Date().toLocaleString('th-TH')}\n\nกรุณาเข้าสู่ระบบแดชบอร์ดตลาดพลูเพื่ออนุมัติสิทธิ์ครับ`
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(targetOwner)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      const mailtoUrl = `mailto:${targetOwner}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+
+      // Auto-trigger Gmail compose window
+      try {
+        window.open(gmailUrl, '_blank')
+      } catch {}
+
       setSuccess({
         title: 'ส่งคำขอสมัครสำเร็จแล้ว!',
-        message: `ระบบได้ส่งคำขอของ "${name.trim()}" และส่งการแจ้งเตือนไปยังอีเมลหลักของเจ้าของระบบ (${result.ownerEmail}) แล้ว เมื่อเจ้าของระบบกดยืนยัน คุณจะสามารถเข้าสู่ระบบด้วยอีเมล ${email.trim()} ได้ทันที`,
-        mailtoLink: result.mailtoLink,
-        ownerEmail: result.ownerEmail,
+        message: `บันทึกคำขอของ "${name.trim()}" เข้าสู่ฐานข้อมูลเรียบร้อยแล้ว และระบบได้เตรียมอีเมลแจ้งเตือนไปยังเจ้าของระบบ (${targetOwner}) เพื่อให้ท่านกดยืนยัน`,
+        gmailUrl,
+        mailtoUrl,
+        ownerEmail: targetOwner,
       })
     } catch {
       setError('เกิดข้อผิดพลาดในการส่งคำขอ กรุณาลองใหม่อีกครั้ง')
@@ -109,15 +121,27 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
             <h3 className="mt-4 font-display text-lg font-bold text-brown-900">{success.title}</h3>
             <p className="mt-2 text-xs leading-relaxed text-brown-600">{success.message}</p>
 
-            {success.mailtoLink && (
-              <a
-                href={success.mailtoLink}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-terracotta-50 border border-terracotta-200 px-4 py-2 text-xs font-bold text-terracotta-700 hover:bg-terracotta-100 transition"
-              >
-                <Mail className="h-3.5 w-3.5 text-terracotta-600" />
-                คลิกส่งอีเมลแจ้งเจ้าของระบบทันที
-              </a>
-            )}
+            <div className="mt-4 space-y-2">
+              {success.gmailUrl && (
+                <a
+                  href={success.gmailUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-terracotta-500 py-3 text-xs font-bold text-white shadow-bento-sm hover:bg-terracotta-600 transition"
+                >
+                  <Mail className="h-4 w-4" />
+                  ส่งอีเมลแจ้งเจ้าของ ({success.ownerEmail}) ทันที
+                </a>
+              )}
+              {success.mailtoUrl && (
+                <a
+                  href={success.mailtoUrl}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-sand-300 bg-sand-100 py-2.5 text-xs font-bold text-brown-700 hover:bg-sand-200 transition"
+                >
+                  ✉️ หรือเปิดด้วยแอป Mail บนเครื่อง
+                </a>
+              )}
+            </div>
 
             <button
               type="button"

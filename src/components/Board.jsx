@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { Heart, Loader2, MessageSquarePlus, Send, Sparkles } from 'lucide-react'
 
-export default function Board({ posts = [], onAddPost, shops = [], loading = false }) {
+export default function Board({ posts = [], onAddPost, onLikePost, shops = [], loading = false }) {
   const [author, setAuthor] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const [liked, setLiked] = useState({})
+  const [liked, setLiked] = useState(() => {
+    try {
+      const raw = localStorage.getItem('tp_liked_posts')
+      return raw ? JSON.parse(raw) : {}
+    } catch {
+      return {}
+    }
+  })
 
   const shopName = (id) => shops.find((s) => s.id === id)?.name ?? null
 
@@ -25,7 +32,22 @@ export default function Board({ posts = [], onAddPost, shops = [], loading = fal
   }
 
   const toggleLike = (id) => {
-    setLiked((prev) => ({ ...prev, [id]: !prev[id] }))
+    const isCurrentlyLiked = !!liked[id]
+    const nextLiked = !isCurrentlyLiked
+
+    const updatedMap = { ...liked, [id]: nextLiked }
+    setLiked(updatedMap)
+    try {
+      localStorage.setItem('tp_liked_posts', JSON.stringify(updatedMap))
+    } catch {}
+
+    const targetPost = posts.find((p) => p.id === id)
+    const baseLikes = targetPost?.likes || 0
+    const nextLikes = nextLiked ? baseLikes + 1 : Math.max(0, baseLikes - 1)
+
+    if (onLikePost) {
+      onLikePost(id, nextLikes)
+    }
   }
 
   return (
