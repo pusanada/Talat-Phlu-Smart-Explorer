@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
-import { CheckCircle2, Pencil, PlusCircle, Save, Trash2, Users, Video, X } from 'lucide-react'
+import { CheckCircle2, Film, MapPin, Pencil, PlusCircle, Save, Store, Trash2, Users, Video, X } from 'lucide-react'
 import TeamPanel from './TeamPanel'
 
 const EMPTY_FORM = {
+  shop_type: 'story', // 'story' | 'all_shops'
   name: '',
   image: null, // File (PNG/JPG/WebP)
   imageUrl: '',
@@ -74,8 +75,15 @@ export default function AdminDashboard({
     if (!form.signature_menu.trim()) next.signature_menu = 'กรุณากรอกเมนูเด็ด'
     else if (form.signature_menu.trim().length > LIMITS.signature_menu) next.signature_menu = `เมนูเด็ดต้องไม่เกิน ${LIMITS.signature_menu} ตัวอักษร`
 
-    if (!form.story.trim()) next.story = 'กรุณาเล่าเรื่องร้าน (รวมผลกระทบจากการก่อสร้างรถไฟฟ้า)'
-    else if (form.story.trim().length > LIMITS.story) next.story = `เรื่องเล่าต้องไม่เกิน ${LIMITS.story} ตัวอักษร`
+    // Story is strictly required for "เรื่องเล่า", optional note for general shops
+    if (form.shop_type === 'story') {
+      if (!form.story.trim()) next.story = 'กรุณาเล่าเรื่องร้าน (ความผูกพันและผลกระทบจากรถไฟฟ้า)'
+      else if (form.story.trim().length > LIMITS.story) next.story = `เรื่องเล่าต้องไม่เกิน ${LIMITS.story} ตัวอักษร`
+
+      if (!form.video?.trim()) next.video = 'กรุณาระบุลิงก์หรือไฟล์วิดีโอเรื่องเล่า'
+    } else {
+      if (form.story.trim().length > LIMITS.story) next.story = `คำอธิบายต้องไม่เกิน ${LIMITS.story} ตัวอักษร`
+    }
 
     const link = form.map_link.trim()
     if (!link) next.map_link = 'กรุณาใส่ลิงก์ Google Maps'
@@ -91,12 +99,15 @@ export default function AdminDashboard({
     setErrors(nextErrors)
     if (Object.keys(nextErrors).some((k) => nextErrors[k])) return
 
+    const isStory = form.shop_type === 'story'
+    const finalImage = imagePreview || (form.imageUrl?.trim() || null)
+
     const payload = {
       name: form.name.trim(),
-      image: imagePreview || (form.imageUrl?.trim() || 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&w=600&q=80'),
-      video: form.video?.trim() || '/videos/talat-phlu-story.mp4',
-      video_duration: form.video_duration?.trim() || '2:00',
-      category: form.category?.trim() || 'ของหวานโบราณ',
+      image: finalImage,
+      video: isStory ? (form.video?.trim() || null) : null,
+      video_duration: isStory ? (form.video_duration?.trim() || '2:00') : null,
+      category: form.category?.trim() || (isStory ? 'ของหวานโบราณ' : 'คาเฟ่'),
       signature_menu: form.signature_menu.trim(),
       story: form.story.trim(),
       map_link: form.map_link.trim(),
@@ -108,7 +119,7 @@ export default function AdminDashboard({
       setSuccessMsg('✏️ แก้ไขข้อมูลร้านเรียบร้อยแล้ว')
     } else {
       onAddShop(payload)
-      setSuccessMsg('🎉 เพิ่มร้านใหม่เรียบร้อยแล้ว')
+      setSuccessMsg(isStory ? '🎉 เพิ่มเรื่องเล่าตลาดพลูเรียบร้อยแล้ว' : '🎉 เพิ่มร้านในหน้าร้านทั้งหมดเรียบร้อยแล้ว')
     }
 
     resetForm()
@@ -128,6 +139,7 @@ export default function AdminDashboard({
     setErrors({})
     setImagePreview(null)
     setForm({
+      shop_type: shop.video ? 'story' : 'all_shops',
       name: shop.name || '',
       image: null,
       imageUrl: shop.image || '',
@@ -171,7 +183,7 @@ export default function AdminDashboard({
             tab === 'shops' ? 'bg-brown-700 text-cream-50 shadow-bento-sm' : 'bg-white text-brown-500 shadow-bento-sm hover:bg-sand-100'
           }`}
         >
-          🍜 ร้านค้า
+          🍜 จัดการร้านค้า
         </button>
         <button
           type="button"
@@ -198,15 +210,59 @@ export default function AdminDashboard({
       ) : (
         <>
           {/* ── Add / Edit form ── */}
-          <form onSubmit={submit} className="mb-6 rounded-[28px] bg-white p-5 shadow-bento">
+          <form onSubmit={submit} className="mb-6 rounded-[28px] bg-white p-5 shadow-bento border border-sand-100">
             <h3 className="mb-4 flex items-center gap-2 font-display text-base font-bold text-brown-900">
               {editingId ? (
                 <Pencil className="h-4 w-4 text-terracotta-500" aria-hidden="true" />
               ) : (
                 <PlusCircle className="h-4 w-4 text-terracotta-500" aria-hidden="true" />
               )}
-              {editingId ? 'แก้ไขร้าน' : 'เพิ่มร้านใหม่'}
+              {editingId ? 'แก้ไขข้อมูลร้าน' : 'เพิ่มร้านใหม่เข้าระบบ'}
             </h3>
+
+            {/* ── Shop Type Switcher (1. เรื่องเล่า vs 2. ร้านทั้งหมด) ── */}
+            <div className="mb-5 rounded-2xl bg-sand-50 p-2 border border-sand-200">
+              <label className="block text-xs font-bold text-brown-800 mb-2 pl-1">
+                📍 เลือกรูปแบบที่ต้องการเพิ่ม:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setField('shop_type', 'story')}
+                  className={`flex items-center gap-2.5 rounded-xl p-3 text-left transition ${
+                    form.shop_type === 'story'
+                      ? 'bg-brown-800 text-cream-50 shadow-bento-sm'
+                      : 'bg-white text-brown-700 hover:bg-sand-100'
+                  }`}
+                >
+                  <Film className={`h-5 w-5 shrink-0 ${form.shop_type === 'story' ? 'text-mustard-300' : 'text-terracotta-500'}`} />
+                  <div>
+                    <p className="text-xs font-bold">1. เพิ่มเรื่องเล่าตลาดพลู</p>
+                    <p className={`text-[10px] ${form.shop_type === 'story' ? 'text-cream-50/75' : 'text-brown-400'}`}>
+                      ร้านที่มีคลิปวิดีโอ & เรื่องราว
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setField('shop_type', 'all_shops')}
+                  className={`flex items-center gap-2.5 rounded-xl p-3 text-left transition ${
+                    form.shop_type === 'all_shops'
+                      ? 'bg-terracotta-500 text-white shadow-bento-sm'
+                      : 'bg-white text-brown-700 hover:bg-sand-100'
+                  }`}
+                >
+                  <Store className={`h-5 w-5 shrink-0 ${form.shop_type === 'all_shops' ? 'text-white' : 'text-terracotta-500'}`} />
+                  <div>
+                    <p className="text-xs font-bold">2. เพิ่มใน "ร้านทั้งหมด"</p>
+                    <p className={`text-[10px] ${form.shop_type === 'all_shops' ? 'text-white/80' : 'text-brown-400'}`}>
+                      พิกัด Google Maps ทั่วไป
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </div>
 
             <div className="space-y-4">
               {/* Shop name — max 50 */}
@@ -216,27 +272,74 @@ export default function AdminDashboard({
                   value={form.name}
                   onChange={(e) => setField('name', e.target.value)}
                   maxLength={LIMITS.name}
-                  placeholder="เช่น ร้านน้ำแข็งใส นิอ่าง"
+                  placeholder={form.shop_type === 'story' ? 'เช่น ร้านน้ำแข็งใส นิอ่าง' : 'เช่น Jann Cafe'}
                   className={inputClass(errors.name)}
                 />
               </Field>
 
               {/* Category */}
-              <Field label="หมวดหมู่ร้าน" hint="เช่น ของหวานโบราณ, สตรีทฟู้ด, อาหารจานเดียว">
+              <Field label="หมวดหมู่ร้าน" hint="เช่น คาเฟ่, ของหวานโบราณ, ร้านอาหารในตำนาน">
                 <input
                   type="text"
                   value={form.category}
                   onChange={(e) => setField('category', e.target.value)}
-                  placeholder="เช่น ของหวานโบราณ"
+                  placeholder="เช่น คาเฟ่"
                   className={inputClass(null)}
                 />
               </Field>
 
-              {/* Image — PNG, JPG, WebP or Image URL */}
-              <Field label="รูปภาพร้าน (Picture / Poster)" hint="รองรับไฟล์ PNG, JPG, WebP หรือใส่ลิงก์ภาพ URL" error={errors.image}>
+              {/* Signature menu — max 100 */}
+              <Field label="เมนูเด็ดประจำร้าน" hint={`สูงสุด ${LIMITS.signature_menu} ตัวอักษร`} error={errors.signature_menu}>
+                <input
+                  type="text"
+                  value={form.signature_menu}
+                  onChange={(e) => setField('signature_menu', e.target.value)}
+                  maxLength={LIMITS.signature_menu}
+                  placeholder="เช่น น้ำแข็งใสไข่แข็ง, Dirty Coffee, หมี่กรอบโบราณ"
+                  className={inputClass(errors.signature_menu)}
+                />
+              </Field>
+
+              {/* Video fields ONLY for 'story' type */}
+              {form.shop_type === 'story' && (
+                <div className="rounded-2xl bg-warm-50/70 p-3.5 border border-warm-200 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Video className="h-4 w-4 text-terracotta-500" />
+                    <span className="text-xs font-bold text-brown-900">การตั้งค่าวิดีโอเรื่องเล่า</span>
+                  </div>
+
+                  <Field label="ลิงก์ไฟล์วิดีโอ (Video URL)" hint="ไฟล์ .mp4 หรือคลิปสั้น" error={errors.video}>
+                    <input
+                      type="text"
+                      value={form.video}
+                      onChange={(e) => setField('video', e.target.value)}
+                      placeholder="/videos/talat-phlu-story.mp4 หรือ https://.../video.mp4"
+                      className={inputClass(errors.video)}
+                    />
+                  </Field>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-brown-600 shrink-0">⏱️ ความยาวคลิป:</span>
+                    <input
+                      type="text"
+                      value={form.video_duration}
+                      onChange={(e) => setField('video_duration', e.target.value)}
+                      placeholder="เช่น 2:05"
+                      className="w-24 rounded-xl border border-sand-200 bg-white px-3 py-1.5 text-xs font-bold text-brown-800"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Cover Image — Real photo or Google Maps photo (optional, no fake replacement) */}
+              <Field
+                label={form.shop_type === 'story' ? 'ภาพหน้าปก / โปสเตอร์วิดีโอ' : 'ภาพหน้าปกจาก Google Maps (ไม่บังคับ)'}
+                hint="ใส่เฉพาะภาพจริงจาก Maps หรืออัปโหลดภาพจริง (หากไม่มีให้เว้นว่างไว้)"
+                error={errors.image}
+              >
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brown-200 bg-sand-100 px-4 py-3 text-sm font-bold text-brown-500 transition hover:border-warm-400 hover:bg-warm-100">
+                    <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brown-200 bg-sand-100 px-4 py-3 text-xs sm:text-sm font-bold text-brown-600 transition hover:border-warm-400 hover:bg-warm-100">
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -244,7 +347,7 @@ export default function AdminDashboard({
                         className="sr-only"
                         onChange={(e) => pickImage(e.target.files?.[0])}
                       />
-                      📁 เลือกไฟล์รูปภาพ (PNG, JPG, WebP)
+                      📁 เลือกไฟล์รูปภาพจริง (PNG, JPG, WebP)
                     </label>
                     {imagePreview && (
                       <div className="relative">
@@ -268,65 +371,34 @@ export default function AdminDashboard({
                     type="url"
                     value={form.imageUrl}
                     onChange={(e) => setField('imageUrl', e.target.value)}
-                    placeholder="หรือใส่ลิงก์รูปภาพ URL (https://...)"
+                    placeholder="หรือวางลิงก์รูปจริงจาก Google Maps (https://...)"
                     className={inputClass(null, 'text-xs')}
                   />
                 </div>
               </Field>
 
-              {/* Video — URL or File path */}
-              <Field label="คลิปวิดีโอร้าน (Video)" hint="ลิงก์ไฟล์ .mp4 หรือคลิปสั้นแนะนำร้าน">
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={form.video}
-                    onChange={(e) => setField('video', e.target.value)}
-                    placeholder="เช่น /videos/talat-phlu-story.mp4 หรือ https://.../video.mp4"
-                    className={inputClass(null)}
-                  />
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-brown-500 shrink-0">⏱️ ความยาวคลิป:</span>
-                    <input
-                      type="text"
-                      value={form.video_duration}
-                      onChange={(e) => setField('video_duration', e.target.value)}
-                      placeholder="เช่น 2:05"
-                      className="w-24 rounded-xl border border-sand-200 bg-sand-100 px-3 py-1.5 text-xs font-bold text-brown-800"
-                    />
-                  </div>
-                </div>
-              </Field>
-
-              {/* Signature menu — max 100 */}
-              <Field label="เมนูเด็ด" hint={`สูงสุด ${LIMITS.signature_menu} ตัวอักษร`} error={errors.signature_menu}>
-                <input
-                  type="text"
-                  value={form.signature_menu}
-                  onChange={(e) => setField('signature_menu', e.target.value)}
-                  maxLength={LIMITS.signature_menu}
-                  placeholder="เช่น น้ำแข็งใสไข่แข็ง และ ไอติมไข่แข็ง"
-                  className={inputClass(errors.signature_menu)}
-                />
-              </Field>
-
-              {/* Story — max 500 */}
+              {/* Story / Description */}
               <Field
-                label="เรื่องเล่าร้าน (เล่าเรื่องร้านและผลกระทบจากการสร้างรถไฟฟ้า)"
+                label={form.shop_type === 'story' ? 'เรื่องเล่าร้าน (ประวัติร้านและผลกระทบรถไฟฟ้า)' : 'คำอธิบาย / รายละเอียดที่อยู่ (ไม่บังคับ)'}
                 hint={`สูงสุด ${LIMITS.story} ตัวอักษร`}
                 error={errors.story}
               >
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={form.story}
                   onChange={(e) => setField('story', e.target.value)}
                   maxLength={LIMITS.story}
-                  placeholder="เล่าเรื่องราวร้าน การสืบทอด และวิธีที่ร้านผ่านการก่อสร้างรถไฟฟ้ามา..."
+                  placeholder={
+                    form.shop_type === 'story'
+                      ? 'เล่าเรื่องราวร้าน ประวัติการเปิด และวิธีที่ร้านผ่านการก่อสร้างรถไฟฟ้ามา...'
+                      : 'ระบุบรรยากาศร้าน ข้อมูลที่ตั้ง หรือจุดสังเกต...'
+                  }
                   className={inputClass(errors.story, 'resize-none leading-relaxed')}
                 />
               </Field>
 
               {/* Map link — URL */}
-              <Field label="ลิงก์ Google Maps" hint="https://maps.app.goo.gl/..." error={errors.map_link}>
+              <Field label="ลิงก์ Google Maps (เปิดนำทาง)" hint="https://maps.app.goo.gl/... หรือ google.com/maps" error={errors.map_link}>
                 <input
                   type="url"
                   value={form.map_link}
@@ -349,7 +421,11 @@ export default function AdminDashboard({
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-[40px] bg-terracotta-500 py-3.5 text-sm font-bold text-white shadow-bento transition hover:bg-terracotta-600 active:scale-[0.97]"
               >
                 <Save className="h-4 w-4" aria-hidden="true" />
-                {editingId ? 'บันทึกการแก้ไข' : 'เพิ่มร้านเข้าระบบ'}
+                {editingId
+                  ? 'บันทึกการแก้ไข'
+                  : form.shop_type === 'story'
+                  ? 'เพิ่มเข้าสู่ "เรื่องเล่าตลาดพลู"'
+                  : 'เพิ่มเข้าสู่ "ร้านทั้งหมด"'}
               </button>
               {editingId && (
                 <button
@@ -363,10 +439,13 @@ export default function AdminDashboard({
             </div>
           </form>
 
-          {/* ── Existing shops (soft list) ── */}
-          <div className="rounded-[28px] bg-white p-5 shadow-bento">
+          {/* ── Existing shops list ── */}
+          <div className="rounded-[28px] bg-white p-5 shadow-bento border border-sand-100">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-display text-base font-bold text-brown-900">ร้านในระบบ</h3>
+              <div>
+                <h3 className="font-display text-base font-bold text-brown-900">ร้านค้าทั้งหมดในระบบ</h3>
+                <p className="text-xs text-brown-400">แยกตามหมวดหมู่เรื่องเล่าและร้านค้าทั่วไป</p>
+              </div>
               <span className="rounded-full bg-terracotta-100 px-3 py-1 text-xs font-bold text-terracotta-600">
                 {shops.length} ร้าน
               </span>
@@ -374,33 +453,57 @@ export default function AdminDashboard({
 
             <div className="space-y-3">
               {shops.map((shop) => (
-                <div key={shop.id} className="flex items-center gap-3 rounded-2xl bg-cream-50 p-3.5 shadow-bento-sm">
-                  <img
-                    src={shop.image}
-                    alt=""
-                    className="h-14 w-20 shrink-0 rounded-2xl object-cover"
-                  />
+                <div key={shop.id} className="flex items-center gap-3 rounded-2xl bg-cream-50 p-3.5 shadow-bento-sm border border-sand-100">
+                  {/* Thumbnail or Map Pin Badge */}
+                  {shop.image ? (
+                    <img
+                      src={shop.image}
+                      alt=""
+                      className="h-14 w-16 sm:w-20 shrink-0 rounded-2xl object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-sand-200/60 text-brown-600">
+                      <MapPin className="h-5 w-5 text-terracotta-500 mb-0.5" />
+                      <span className="text-[9px] font-bold">Maps</span>
+                    </div>
+                  )}
+
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-brown-900">{shop.name}</p>
+                    <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                      <p className="truncate text-sm font-bold text-brown-900">{shop.name}</p>
+                      {shop.video ? (
+                        <span className="rounded-full bg-warm-100 px-2 py-0.5 text-[9px] font-extrabold text-warm-700">
+                          🎬 เรื่องเล่า
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-sand-200 px-2 py-0.5 text-[9px] font-extrabold text-brown-600">
+                          🗺️ ร้านทั้งหมด
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-[11px] font-medium text-brown-500">{shop.signature_menu}</p>
-                    <p className="mt-0.5 text-[11px] font-bold text-brown-300">
-                      👍 {shop.likes} · 👎 {shop.dislikes}
-                    </p>
+                    <div className="mt-1 flex items-center gap-3 text-[10px] text-brown-400">
+                      <span>หมวด: {shop.category}</span>
+                      {shop.video && (
+                        <span>👍 {shop.likes || 0} · 👎 {shop.dislikes || 0}</span>
+                      )}
+                    </div>
                   </div>
+
                   <div className="flex shrink-0 flex-col gap-1.5">
                     <button
                       type="button"
                       onClick={() => startEdit(shop)}
-                      className="flex items-center gap-1 rounded-[40px] bg-sand-100 px-3 py-2 text-[11px] font-bold text-brown-700 transition hover:bg-sand-200 active:scale-95"
+                      className="flex items-center gap-1 rounded-[40px] bg-sand-100 px-3 py-1.5 text-[11px] font-bold text-brown-700 transition hover:bg-sand-200 active:scale-95"
                     >
-                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" /> แก้ไข
+                      <Pencil className="h-3 w-3" aria-hidden="true" /> แก้ไข
                     </button>
                     <button
                       type="button"
                       onClick={() => remove(shop)}
-                      className="flex items-center gap-1 rounded-[40px] bg-terracotta-100 px-3 py-2 text-[11px] font-bold text-terracotta-600 transition hover:bg-terracotta-300/40 active:scale-95"
+                      className="flex items-center gap-1 rounded-[40px] bg-terracotta-100 px-3 py-1.5 text-[11px] font-bold text-terracotta-600 transition hover:bg-terracotta-300/40 active:scale-95"
                     >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> ลบ
+                      <Trash2 className="h-3 w-3" aria-hidden="true" /> ลบ
                     </button>
                   </div>
                 </div>

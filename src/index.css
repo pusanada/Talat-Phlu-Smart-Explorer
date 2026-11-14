@@ -86,10 +86,27 @@
 
 html {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   @apply bg-cream-100 text-brown-900 font-sans antialiased;
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+}
+
+/* Prevent accidental zooming on iOS/iPadOS when focusing input fields */
+input, select, textarea {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
+
+/* Interactive elements: fast touch, no double-tap zoom delay or misclicks */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Hide scrollbar for horizontal swipe carousels */
