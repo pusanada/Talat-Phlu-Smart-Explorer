@@ -56,13 +56,23 @@ export function useTeam() {
 
         // Approved requests from Supabase
         const approvedFromSupabase = requests.filter((r) => r.status === 'approved')
-        const currentMembers = [...prev.members]
+        
+        // Owner is always the first member
+        const ownerMember = {
+          id: 'owner',
+          name: 'เจ้าของทีมตลาดพลู',
+          email: DEFAULT_OWNER_EMAIL,
+          role: 'owner',
+        }
+        
+        const currentMembers = [ownerMember]
         approvedFromSupabase.forEach((app) => {
-          if (!currentMembers.some((m) => m.email?.toLowerCase() === app.email?.toLowerCase())) {
+          if (app.email?.toLowerCase() !== DEFAULT_OWNER_EMAIL.toLowerCase()) {
             currentMembers.push({
               id: app.id || `member_${app.email}`,
               name: app.name,
               email: app.email,
+              pin: app.pin,
               role: 'sub_admin',
               reason: app.reason,
               approved_at: app.created_at || new Date().toISOString(),
@@ -73,6 +83,7 @@ export function useTeam() {
         return {
           members: currentMembers,
           pending: pendingFromSupabase,
+          allRequests: requests,
         }
       })
     } catch (err) {
@@ -110,7 +121,7 @@ export function useTeam() {
           return { ok: false, error: 'กรุณากรอกรหัสผ่านเจ้าของระบบ' }
         }
         if (!ownerPasswords.includes(code)) {
-          return { ok: false, error: 'รหัสผ่านเจ้าของระบบไม่ถูกต้อง (รหัสตั้งต้น: 2580)' }
+          return { ok: false, error: 'รหัสผ่านเจ้าของระบบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง' }
         }
         return {
           ok: true,
@@ -223,38 +234,20 @@ export function useTeam() {
   /** Owner confirms a pending request → becomes sub-admin */
   const approve = useCallback(async (id) => {
     await updateRequestStatus(id, 'approved')
-    setTeam((d) => {
-      const req = d.pending.find((p) => p.id === id)
-      if (!req) return d
-      return {
-        members: [
-          ...d.members,
-          {
-            id: `member_${Date.now().toString(36)}`,
-            name: req.name,
-            email: req.email,
-            pin: req.pin,
-            role: 'sub_admin',
-            reason: req.reason,
-            invitedBy: req.invitedBy ?? 'สมัครผ่านอีเมล',
-            approved_at: new Date().toISOString(),
-          },
-        ],
-        pending: d.pending.filter((p) => p.id !== id),
-      }
-    })
-  }, [])
+    await refreshRequests()
+  }, [refreshRequests])
 
   /** Owner rejects a pending request */
   const reject = useCallback(async (id) => {
     await updateRequestStatus(id, 'rejected')
-    setTeam((d) => ({ ...d, pending: d.pending.filter((p) => p.id !== id) }))
-  }, [])
+    await refreshRequests()
+  }, [refreshRequests])
 
   /** Owner removes a sub-admin */
-  const removeMember = useCallback((id) => {
-    setTeam((d) => ({ ...d, members: d.members.filter((m) => m.id !== id) }))
-  }, [])
+  const removeMember = useCallback(async (id) => {
+    await updateRequestStatus(id, 'rejected')
+    await refreshRequests()
+  }, [refreshRequests])
 
   /** Reset team state */
   const reset = useCallback(() => {
@@ -264,7 +257,8 @@ export function useTeam() {
       // ignore
     }
     setTeam(SEED)
-  }, [])
+    refreshRequests()
+  }, [refreshRequests])
 
   return { team, login, addRequest, approve, reject, removeMember, reset, refreshRequests, defaultOwnerEmail: DEFAULT_OWNER_EMAIL }
 }
@@ -272,4 +266,5 @@ export function useTeam() {
 export const ROLE_LABELS = {
   owner: 'เจ้าของทีม',
   sub_admin: 'ผู้ดูแลร่วม',
+  'sub-admin': 'ผู้ดูแลร่วม',
 }

@@ -27,7 +27,7 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
       return
     }
     if (!password.trim()) {
-      setError('กรุณากรอกรหัสผ่าน (รหัสเจ้าของ: 2580 หรือรหัสสุ่ม 6 หลัก)')
+      setError('กรุณากรอกรหัสผ่านของคุณ')
       return
     }
 
@@ -257,14 +257,14 @@ export default function AuthModal({ open, initialMode = 'login', onClose, onLogi
 
                 <div>
                   <label className="block text-xs font-bold text-brown-700 mb-1">
-                    รหัสผ่าน / รหัสสุ่มยืนยัน *
+                    รหัสผ่าน *
                   </label>
                   <div className="relative">
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="รหัสผ่านผู้ดูแลระบบ หรือรหัสสุ่ม 6 หลัก"
+                      placeholder="กรอกรหัสผ่านของคุณ"
                       required
                       className="w-full rounded-2xl border border-sand-200 bg-sand-50 px-4 py-2.5 text-sm font-semibold text-brown-900 outline-none transition placeholder:font-normal placeholder:text-brown-300 focus:border-terracotta-400 focus:ring-2 focus:ring-terracotta-400/20"
                     />

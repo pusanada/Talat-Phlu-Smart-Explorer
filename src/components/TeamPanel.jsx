@@ -1,13 +1,32 @@
-import { Clock, Mail, RefreshCw, ShieldQuestion, UserMinus, UserPlus } from 'lucide-react'
+import { useState } from 'react'
+import { Check, CheckCircle2, Clock, Database, Mail, RefreshCw, ShieldQuestion, UserCheck, UserMinus, UserPlus, XCircle } from 'lucide-react'
 import { ROLE_LABELS } from '../hooks/useTeam'
 
 /**
  * Team management inside the Admin Dashboard.
- * Owner view: pending approvals inbox (with email) + full team list (owner-controlled).
+ * Owner view: pending approvals inbox (with email) + full team list (owner-controlled) + Supabase request history.
  * Sub-admin view: invite-a-colleague section only.
  */
 export default function TeamPanel({ team, currentMember, onApprove, onReject, onRemoveMember, onResetTeam, onRefresh, onOpenInvite }) {
   const isOwner = currentMember.role === 'owner'
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshSuccess, setRefreshSuccess] = useState(false)
+  const [showHistory, setShowHistory] = useState(true)
+
+  const handleRefreshClick = async () => {
+    if (!onRefresh || refreshing) return
+    setRefreshing(true)
+    setRefreshSuccess(false)
+    try {
+      await onRefresh()
+      setRefreshSuccess(true)
+      setTimeout(() => setRefreshSuccess(false), 2000)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const allRequests = team.allRequests || []
 
   return (
     <section className="animate-view space-y-5">
@@ -23,11 +42,13 @@ export default function TeamPanel({ team, currentMember, onApprove, onReject, on
               {onRefresh && (
                 <button
                   type="button"
-                  onClick={onRefresh}
+                  onClick={handleRefreshClick}
+                  disabled={refreshing}
                   title="รีเฟรชคำขอจาก Supabase"
-                  className="rounded-full bg-sand-100 p-1.5 text-brown-600 hover:bg-sand-200 transition"
+                  className="flex items-center gap-1.5 rounded-full bg-sand-100 px-3 py-1.5 text-xs font-bold text-brown-700 hover:bg-sand-200 transition disabled:opacity-50"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin text-terracotta-500' : ''}`} />
+                  <span>{refreshing ? 'กำลังดึง...' : refreshSuccess ? 'อัปเดตแล้ว ✓' : 'ดึงข้อมูล Supabase'}</span>
                 </button>
               )}
               <span className="rounded-full bg-warm-100 px-3 py-1 text-xs font-bold text-warm-600">
@@ -38,15 +59,15 @@ export default function TeamPanel({ team, currentMember, onApprove, onReject, on
 
           {team.pending.length === 0 ? (
             <div className="rounded-2xl bg-sand-100 px-4 py-6 text-center">
-              <p className="text-sm font-semibold text-brown-500">ไม่มีคำขอค้างอยู่ 🎉</p>
+              <p className="text-sm font-semibold text-brown-500">ไม่มีคำขอที่ค้างรอการยืนยัน 🎉</p>
               <p className="mt-1 text-xs text-brown-300">
-                เมื่อมีผู้กรอกอีเมลขอสิทธิ์ Admin คำขอจะแสดงที่นี่เพื่อให้คุณกดยืนยัน
+                เมื่อมีผู้กรอกอีเมลขอสิทธิ์ Admin เข้ามาใหม่ คำขอจะขึ้นให้กดยืนยันที่นี่ทันที
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               {team.pending.map((req) => (
-                <div key={req.id} className="animate-pop flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-cream-50 p-4 shadow-bento-sm">
+                <div key={req.id} className="animate-pop flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl bg-cream-50 p-4 shadow-bento-sm border border-warm-200">
                   <div className="flex items-start gap-3 min-w-0">
                     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sand-200 font-display text-base font-bold text-brown-700">
                       {req.name.charAt(0)}
@@ -76,7 +97,7 @@ export default function TeamPanel({ team, currentMember, onApprove, onReject, on
                         </div>
                       )}
                       <p className="mt-1 text-[10px] text-brown-400">
-                        {req.source === 'invite' ? 'ได้รับคำเชิญ' : 'สมัครผ่านอีเมล'}
+                        {req.source === 'invite' ? 'ได้รับคำเชิญ' : 'สมัครผ่านอีเมล'} • {req.created_at ? new Date(req.created_at).toLocaleDateString('th-TH') : 'วันนี้'}
                       </p>
                     </div>
                   </div>
@@ -148,12 +169,17 @@ export default function TeamPanel({ team, currentMember, onApprove, onReject, on
                         m.role === 'owner' ? 'bg-warm-100 text-warm-700' : 'bg-terracotta-100 text-terracotta-600'
                       }`}
                     >
-                      {ROLE_LABELS[m.role]}
+                      {ROLE_LABELS[m.role] || 'ผู้ดูแลร่วม'}
                     </span>
                   </div>
                   <p className="text-[11px] text-brown-400 truncate">
                     {m.email ? `อีเมล: ${m.email}` : m.role === 'owner' ? 'ผู้ดูแลหลัก' : 'ผู้ดูแลร่วม'}
                   </p>
+                  {m.pin && m.pin !== 'email_auth' && (
+                    <p className="text-[10px] font-mono text-terracotta-600 mt-0.5">
+                      🔑 รหัสผ่าน: {m.pin}
+                    </p>
+                  )}
                 </div>
 
                 {m.role !== 'owner' && (
@@ -184,6 +210,92 @@ export default function TeamPanel({ team, currentMember, onApprove, onReject, on
           </div>
         </div>
       )}
+
+      {/* ── Owner: Supabase All Requests History ── */}
+      {isOwner && allRequests.length > 0 && (
+        <div className="rounded-[28px] bg-white p-5 shadow-bento">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+              <h3 className="font-display text-base font-bold text-brown-900">
+                ประวัติคำขอทั้งหมดในฐานข้อมูล Supabase ({allRequests.length} รายการ)
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowHistory(!showHistory)}
+              className="text-xs font-bold text-brown-500 hover:text-terracotta-600"
+            >
+              {showHistory ? 'ซ่อน' : 'แสดง'}
+            </button>
+          </div>
+
+          {showHistory && (
+            <div className="space-y-2.5">
+              {allRequests.map((req) => {
+                const isApproved = req.status === 'approved'
+                const isRejected = req.status === 'rejected'
+                const isPending = req.status === 'pending'
+
+                return (
+                  <div
+                    key={req.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl border border-sand-200 bg-sand-50/60 p-3 text-xs"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-brown-900">{req.name}</span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[9.5px] font-bold ${
+                            isApproved
+                              ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                              : isRejected
+                              ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                              : 'bg-amber-100 text-amber-700 border border-amber-200'
+                          }`}
+                        >
+                          {isApproved ? '✓ อนุมัติแล้ว' : isRejected ? '✕ ปฏิเสธแล้ว' : '⏳ รอดำเนินการ'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-mono text-brown-500 mt-0.5">{req.email}</p>
+                      {req.reason && (
+                        <p className="text-[10px] text-brown-600 italic mt-0.5">เหตุผล: "{req.reason}"</p>
+                      )}
+                      {req.pin && req.pin !== 'email_auth' && (
+                        <p className="text-[10px] text-terracotta-600 font-mono mt-0.5">
+                          🔑 รหัสผ่านที่ตั้ง: <span className="font-bold">{req.pin}</span>
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                      {!isApproved && (
+                        <button
+                          type="button"
+                          onClick={() => onApprove(req.id)}
+                          className="rounded-full bg-emerald-500 hover:bg-emerald-600 px-3 py-1 text-[10.5px] font-bold text-white transition active:scale-95 shadow-sm"
+                        >
+                          อนุมัติสิทธิ์
+                        </button>
+                      )}
+                      {!isRejected && (
+                        <button
+                          type="button"
+                          onClick={() => onReject(req.id)}
+                          className="rounded-full bg-sand-200 hover:bg-rose-100 hover:text-rose-600 px-3 py-1 text-[10.5px] font-bold text-brown-700 transition active:scale-95"
+                        >
+                          ปฏิเสธ
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </section>
   )
 }
+
