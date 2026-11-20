@@ -306,24 +306,52 @@ export async function deleteShop(id) {
 }
 
 /**
- * Record a like/dislike vote
+ * Record a like/dislike vote (delta-based).
+ * `kind` is the NEW vote ('like' | 'dislike' | null = vote removed),
+ * `previousVote` is the vote being replaced or removed.
+ * Prefers an atomic Postgres RPC (`increment_shop_vote`, see supabase/schema.sql);
+ * falls back to a fresh read-modify-write so two voters can't overwrite
+ * each other with stale client-side counts.
  */
-export async function recordVote(shopId, kind, currentShop) {
-  if (!isSupabaseConfigured || !supabase || !currentShop) {
+export async function recordVote(shopId, kind, previousVote = null) {
+  if (!isSupabaseConfigured || !supabase) {
     return null
   }
 
-  try {
-    const { error } = await supabase
-      .from('shops')
-      .update({
-        likes: currentShop.likes,
-        dislikes: currentShop.dislikes,
-      })
-      .eq('id', shopId)
+  const dLikes = (kind === 'like' ? 1 : 0) - (previousVote === 'like' ? 1 : 0)
+  const dDislikes = (kind === 'dislike' ? 1 : 0) - (previousVote === 'dislike' ? 1 : 0)
+  if (dLikes === 0 && dDislikes === 0) return null
 
-    if (error) throw error
+  try {
+    // 1) Atomic path (recommended): requires increment_shop_vote() in Supabase
+    const { error: rpcError } = await supabase.rpc('increment_shop_vote', {
+      p_shop_id: shopId,
+      p_dlikes: dLikes,
+      p_ddislikes: dDislikes,
+    })
+    if (!rpcError) return true
+
+    // 2) Fallback: read the fresh counts from the DB, apply the delta locally
+    const { data: fresh, error: readError } = await supabase
+      .from('shops')
+      .select('likes, dislikes')
+      .eq('id', shopId)
+      .single()
+    if (readError) throw readError
+
+    const next = {
+      likes: (fresh?.likes ?? 0) + dLikes,
+      dislikes: (fresh?.dislikes ?? 0) + dDislikes,
+    }
+
+    const { error: writeError } = await supabase
+      .from('shops')
+      .update(next)
+      .eq('id', shopId)
+    if (writeError) throw writeError
+    return true
   } catch (err) {
     console.error('Supabase recordVote error:', err)
+    return false
   }
 }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Award, Check, Download, Loader2, MapPin, RotateCcw, Share2, Trophy } from 'lucide-react'
 import { toBlob, toPng } from 'html-to-image'
 import ShopCard from './ShopCard'
@@ -34,7 +34,11 @@ export default function Result({ answers, shops = [], onRestart, questions }) {
   const [characterImgError, setCharacterImgError] = useState(false)
   const [previewModalUrl, setPreviewModalUrl] = useState(null)
 
-  const characterSrc = !characterImgError && (persona.characterImage || (persona.key === 'sweet' ? '/images/character-sweet.png' : null))
+  useEffect(() => {
+    setCharacterImgError(false)
+  }, [persona.key])
+
+  const characterSrc = !characterImgError && (persona.characterImage || (persona.key === 'sweet' ? '/images/Sweet.png' : null))
 
   // Normalize tallies to 0–100% (max per key = 5 questions × 3 pts = 15 pts)
   const stats = AXES.map((ax) => {

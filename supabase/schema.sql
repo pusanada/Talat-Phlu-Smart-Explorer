@@ -46,10 +46,14 @@ create table if not exists public.posts (
   author text not null default 'บุคคลนิรนาม',
   avatar text default '💬',
   message text not null,
+  image text,
   shop_id text references public.shops(id) on delete set null,
   likes integer default 0,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Ensure image column exists if table was already created
+alter table public.posts add column if not exists image text;
 
 -- Enable RLS for posts
 alter table public.posts enable row level security;
@@ -257,3 +261,24 @@ create policy "Allow public read on quiz_submissions"
   on public.quiz_submissions for select
   using (true);
 
+
+-- ====================================================================
+-- 6. Atomic vote increment (รันสคริปต์นี้ใน Supabase SQL Editor เพิ่มเติม)
+-- เรียกจาก recordVote() ผ่าน supabase.rpc('increment_shop_vote', ...)
+-- ป้องกัน race: นับ +1 ฝั่งฐานข้อมูลโดยตรง ไม่ต้องส่งตัวเลขสัมบูรณ์จาก client
+-- ====================================================================
+create or replace function public.increment_shop_vote(p_shop_id text, p_dlikes int, p_ddislikes int)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.shops
+    set likes = greatest(0, likes + p_dlikes),
+        dislikes = greatest(0, dislikes + p_ddislikes)
+    where id = p_shop_id;
+end;
+$$;
+
+grant execute on function public.increment_shop_vote(text, int, int) to anon, authenticated;

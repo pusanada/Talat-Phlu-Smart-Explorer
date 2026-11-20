@@ -183,28 +183,27 @@ export default function App() {
     const previous = votes[shopId] ?? null
     if (previous === kind) return
 
-    let targetShop = null
-    setShops((prev) =>
-      prev.map((s) => {
-        if (s.id !== shopId) return s
-        let { likes, dislikes } = s
-        if (previous === 'like') likes -= 1
-        if (previous === 'dislike') dislikes -= 1
-        if (kind === 'like') likes += 1
-        if (kind === 'dislike') dislikes += 1
-        targetShop = { ...s, likes, dislikes }
-        return targetShop
-      }),
-    )
+    // Compute the new counts from the CURRENT shops state.
+    // (Never read/capture values inside a setShops updater — React may run
+    // that function after this block, which made targetShop null and
+    // silently dropped the Supabase write.)
+    const target = shops.find((s) => s.id === shopId)
+    if (!target) return
+    let { likes, dislikes } = target
+    if (previous === 'like') likes -= 1
+    if (previous === 'dislike') dislikes -= 1
+    if (kind === 'like') likes += 1
+    if (kind === 'dislike') dislikes += 1
+    const targetShop = { ...target, likes, dislikes }
+
+    setShops((prev) => prev.map((s) => (s.id === shopId ? targetShop : s)))
     const nextVotes = { ...votes, [shopId]: kind }
     setVotes(nextVotes)
     try {
       localStorage.setItem('tp_shop_votes', JSON.stringify(nextVotes))
     } catch {}
 
-    if (targetShop) {
-      await recordVote(shopId, kind, targetShop)
-    }
+    await recordVote(shopId, kind, targetShop)
   }
 
   const handleFinishQuiz = async () => {
@@ -222,8 +221,8 @@ export default function App() {
   }
 
   // ── Community board ──────────────────────────────────────────
-  const handleAddPost = async ({ author, message, shop_id }) => {
-    const created = await createPost({ author, message, shop_id })
+  const handleAddPost = async ({ author, message, image, shop_id }) => {
+    const created = await createPost({ author, message, image, shop_id })
     setPosts((prev) => [created, ...prev])
   }
 
